@@ -39,7 +39,7 @@ const checks = []; const check = (ok, name, detail = '') => { checks.push({ ok, 
   await tapSel('[data-next]'); await p.waitForTimeout(700); await shot('03_dialogue');
   // 대화: 탭으로 한 줄씩 (전투 화면이 나올 때까지)
   for (let i = 0; i < 40 && !(await p.$('.battle')); i++) { await tap(W / 2, H * 0.55); await p.waitForTimeout(450); }
-  await p.waitForSelector('.battle', { timeout: 20000 }); await p.waitForTimeout(800); await shot('04_battle_start');
+  await p.waitForSelector('.battle', { timeout: 20000 }); await p.waitForFunction(() => window.__app.battle && window.__app.battle.ready, null, { timeout: 30000 }); await p.waitForTimeout(800); await shot('04_battle_start');
 
   // 튜토리얼 안내가 레온을 가리는지 (화면 좌표로 판정)
   const overlap = async () => p.evaluate(() => {
@@ -104,7 +104,7 @@ const checks = []; const check = (ok, name, detail = '') => { checks.push({ ok, 
   for (let i = 0; i < 20 && !(await p.$('.node')); i++) { await tap(W / 2, H * 0.55); await p.waitForTimeout(400); }
   await shot('09_stage_list');
   await tapSel('.node.open'); await p.waitForTimeout(700); await shot('10_party');
-  await tapSel('.go'); await p.waitForSelector('.battle', { timeout: 20000 }); await p.waitForTimeout(1200);
+  await tapSel('.go'); await p.waitForSelector('.battle', { timeout: 20000 }); await p.waitForFunction(() => window.__app.battle && window.__app.battle.ready, null, { timeout: 30000 }); await p.waitForTimeout(1200);
   await p.evaluate(() => { window.__app.battle.__marker = 2; });
   const st0 = await p.evaluate(() => { const B = window.__app.battle; return { gold: B.gold, hand: B.hand.length, heroes: B.heroes.length, phase: B.phase }; });
   await tapSel('.mini-summon'); await p.waitForTimeout(500); await tapSel('.mini-summon'); await p.waitForTimeout(600);

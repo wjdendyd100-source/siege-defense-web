@@ -300,3 +300,5 @@ body.portrait #rotate { display: flex; }
 /* 안내 문구: 체력 패널 아래 왼쪽 고정. 선택 정보창이 열리면 겹치지 않게 숨김 */
 .hud:has(.info-panel.show) .tip { opacity: 0; }
 .tip { font-size: max(12px, calc(var(--u)*21)) !important; padding: calc(var(--u)*10) calc(var(--u)*16) !important; transition: opacity .2s; }
+
+.battle .bprep { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,8,5,.55); color: #ffe29a; font-size: 18px; font-weight: 700; z-index: 50; pointer-events: none; letter-spacing: .05em; }

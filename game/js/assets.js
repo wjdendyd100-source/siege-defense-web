@@ -1,7 +1,7 @@
 // 에셋 로딩: 전부 이 프로젝트에서 새로 생성한 이미지(game/assets). 교체 시 파일만 바꾸면 된다.
 // 레온 그림은 사용자 제공 시안(art_src/leon_concept_sheet.png)에서 tools/cut_leon.py로 잘라 만든다.
 import * as THREE from 'three';
-import { loadModels } from './units.js?v=20261106g';
+import { loadModels } from './units.js?v=20261106h';
 
 export const ART = [
   'hero_protagonist', 'hero_sera', 'hero_bran', 'hero_elise', 'hero_marco', 'hero_roderick', 'hero_amelia',
@@ -25,7 +25,7 @@ function loadImg(src) {
 
 export async function loadAll(onProgress) {
   // 전투 유닛은 3D 모델(units.js)이라 영웅·몬스터 2D 그림은 미리 GPU에 올리지 않는다 (대화·카드 화면은 그림 주소를 바로 쓴다)
-  const list = [['tex_stone', 'assets/tex_stone.jpg'], ['tex_cobble', 'assets/tex_cobble.jpg'],
+  const list = [['tex_floor', 'assets/tex_floor.jpg'], ['tex_wall', 'assets/tex_wall.jpg'], ['banner_navy', 'assets/banner_navy.webp'], ['bush_flowers', 'assets/bush_flowers.webp'],
     ['bg_title', 'assets/bg_title.jpg'], ['bg_village', 'assets/bg_village.jpg']];
   let done = 0;
   let mp = 0; const prog = () => onProgress && onProgress((done / list.length) * 0.3 + mp * 0.7);

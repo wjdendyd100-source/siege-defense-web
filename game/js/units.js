@@ -13,7 +13,7 @@ export async function loadModels(onProgress) {
   let done = 0;
   await Promise.all(MODEL_FILES.map(async n => {
     // 파일 안의 data: 주소를 네트워크로 다시 읽지 않도록(일부 환경의 보안 정책이 막음) 직접 풀어서 GLB로 만들어 넘긴다
-    const res = await fetch(`assets/models/${n}.gltf.json?v=20261106g`);
+    const res = await fetch(`assets/models/${n}.gltf.json?v=20261106h`);
     if (!res.ok) throw new Error(`모델 ${n} (${res.status})`);
     const g = await loader.parseAsync(toGlb(await res.json()), '');
     const clips = {}; for (const c of g.animations) clips[c.name] = c;

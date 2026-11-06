@@ -18,22 +18,22 @@
   {
    "ok": true,
    "name": "플레이 중 튜토리얼 안내가 레온·HUD와 겹친 횟수 0",
-   "detail": "0/7회 점검"
+   "detail": "0/5회 점검"
   },
   {
    "ok": true,
    "name": "실제 타격이 들어가고 처치됨 (스토리1 해골 7마리 중 4마리 이상)",
-   "detail": "{\"hits\":23,\"kills\":7,\"escaped\":0}"
+   "detail": "{\"hits\":21,\"kills\":7,\"escaped\":0}"
   },
   {
    "ok": true,
    "name": "전투가 끝까지 진행됨",
-   "detail": "{\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n2\\n찌르기\\n회전베기\\n8\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 ·\\n30\"}"
+   "detail": "{\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n6\\n찌르기\\n0.5\\n회전베기\\n7\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 \"}"
   },
   {
    "ok": true,
    "name": "레온·몬스터 실제 애니메이션 재생",
-   "detail": "레온:Idle, 몬스터:Walking_D_Skeletons, 몬스터:Spawn_Ground_Skeletons, 레온:Walking_A, 몬스터:Idle_Combat, 레온:2H_Melee_Attack_Spinning, 몬스터:Hit_A, 레온:1H_Melee_Attack_Stab, 레온:1H_Melee_Attack_Slice_Diagonal, 레온:2H_Melee_Attack_Chop, 레온:1H_Melee_Attack_Slice_Horizontal, 레온:1H_Melee_Attack_Chop, 몬스터:1H_Melee_Attack_Chop"
+   "detail": "레온:Idle, 몬스터:Walking_D_Skeletons, 레온:Walking_A, 몬스터:Spawn_Ground_Skeletons, 몬스터:Idle_Combat, 레온:1H_Melee_Attack_Stab, 레온:1H_Melee_Attack_Slice_Diagonal, 몬스터:Hit_A, 레온:2H_Melee_Attack_Chop, 레온:1H_Melee_Attack_Slice_Horizontal, 레온:1H_Melee_Attack_Chop, 레온:2H_Melee_Attack_Spinning, 몬스터:1H_Melee_Attack_Chop, 레온:Hit_A"
   },
   {
    "ok": true,
@@ -63,12 +63,12 @@
   {
    "ok": true,
    "name": "스테이지 전투가 다시 시작되지 않고 진행됨",
-   "detail": "{\"marker\":2,\"phase\":\"wave\",\"wave\":0,\"kills\":3,\"playTime\":11}"
+   "detail": "{\"marker\":2,\"phase\":\"wave\",\"wave\":0,\"kills\":1,\"playTime\":8}"
   },
   {
    "ok": true,
    "name": "배치한 영웅이 실제 공격 동작",
-   "detail": "Idle, 1H_Melee_Attack_Slice_Diagonal, Hit_A, 1H_Melee_Attack_Slice_Horizontal"
+   "detail": "Idle, 1H_Melee_Attack_Slice_Horizontal, 1H_Melee_Attack_Slice_Diagonal"
   },
   {
    "ok": true,
@@ -77,25 +77,25 @@
   }
  ],
  "log": [
-  "version 버전 11.06-G · 3D 캐릭터",
+  "version 버전 11.06-H · 3D 캐릭터",
   "PASS 버튼·전장을 짧게 탭해도 전투가 다시 시작되지 않음 (대화 → 전투 경로) ",
   "PASS 튜토리얼 안내가 레온·HUD를 가리지 않음 (전투 시작) {\"shown\":true,\"hit\":false,\"uiHits\":[],\"tip\":[9,64,249,112],\"leon\":[428,158,488,223],\"text\":\"왼쪽 아래 조이스틱으로 레온을 움직이세요 (PC: WASD)\"}",
   "PASS 큰 안내 글자(웨이브 시작·클리어)와 준비 버튼이 동시에 보이지 않음 []",
-  "PASS 플레이 중 튜토리얼 안내가 레온·HUD와 겹친 횟수 0 0/7회 점검",
-  "stat {\"hits\":23,\"kills\":7,\"escaped\":0}",
-  "PASS 실제 타격이 들어가고 처치됨 (스토리1 해골 7마리 중 4마리 이상) {\"hits\":23,\"kills\":7,\"escaped\":0}",
-  "result {\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n2\\n찌르기\\n회전베기\\n8\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 ·\\n30\"} elapsed 81s ticks 390",
-  "PASS 전투가 끝까지 진행됨 {\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n2\\n찌르기\\n회전베기\\n8\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 ·\\n30\"}",
-  "PASS 레온·몬스터 실제 애니메이션 재생 레온:Idle, 몬스터:Walking_D_Skeletons, 몬스터:Spawn_Ground_Skeletons, 레온:Walking_A, 몬스터:Idle_Combat, 레온:2H_Melee_Attack_Spinning, 몬스터:Hit_A, 레온:1H_Melee_Attack_Stab, 레온:1H_Melee_Attack_Slice_Diagonal, 레온:2H_Melee_Attack_Chop, 레온:1H_Melee_Attack_Slice_Horizontal, 레온:1H_Melee_Attack_Chop, 몬스터:1H_Melee_Attack_Chop",
+  "PASS 플레이 중 튜토리얼 안내가 레온·HUD와 겹친 횟수 0 0/5회 점검",
+  "stat {\"hits\":21,\"kills\":7,\"escaped\":0}",
+  "PASS 실제 타격이 들어가고 처치됨 (스토리1 해골 7마리 중 4마리 이상) {\"hits\":21,\"kills\":7,\"escaped\":0}",
+  "result {\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n6\\n찌르기\\n0.5\\n회전베기\\n7\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 \"} elapsed 117s ticks 560",
+  "PASS 전투가 끝까지 진행됨 {\"inBattle\":true,\"ended\":true,\"kills\":7,\"screen\":\"\",\"text\":\"레온 Lv.1\\n620 / 620\\n웨이브 2/2\\n∞\\n00:43\\n1x\\n자동\\n내려찍기\\n6\\n찌르기\\n0.5\\n회전베기\\n7\\n공격\\n달리기 OFF\\n회피\\n방어\\n승리\\n처치 7\\n잃은 생명 0\\n시간 00:43\\n첫 클리어 보상: 영웅 토비 \"}",
+  "PASS 레온·몬스터 실제 애니메이션 재생 레온:Idle, 몬스터:Walking_D_Skeletons, 레온:Walking_A, 몬스터:Spawn_Ground_Skeletons, 몬스터:Idle_Combat, 레온:1H_Melee_Attack_Stab, 레온:1H_Melee_Attack_Slice_Diagonal, 몬스터:Hit_A, 레온:2H_Melee_Attack_Chop, 레온:1H_Melee_Attack_Slice_Horizontal, 레온:1H_Melee_Attack_Chop, 레온:2H_Melee_Attack_Spinning, 몬스터:1H_Melee_Attack_Chop, 레온:Hit_A",
   "PASS 소환 버튼 탭 → 카드 2장, 골드 감소 [{\"gold\":100,\"hand\":0,\"heroes\":0,\"phase\":\"prep\"},{\"gold\":80,\"hand\":2}]",
   "drag {\"cell\":[6,3],\"ok\":true}",
   "PASS 카드를 끌어 전장에 놓으면 영웅 배치 {\"heroes\":[[\"toby\",6,3]],\"hand\":1}",
   "PASS 모드 버튼 탭 → 지휘/조작 전환 command→control",
   "PASS 일시정지 → 계속하기 true true",
   "PASS 배속 버튼 탭 → 2배속 2",
-  "PASS 스테이지 전투가 다시 시작되지 않고 진행됨 {\"marker\":2,\"phase\":\"wave\",\"wave\":0,\"kills\":3,\"playTime\":11}",
-  "PASS 배치한 영웅이 실제 공격 동작 Idle, 1H_Melee_Attack_Slice_Diagonal, Hit_A, 1H_Melee_Attack_Slice_Horizontal",
-  "longtasks>=200ms [[8633,1190],[15987,422],[104527,327]]",
+  "PASS 스테이지 전투가 다시 시작되지 않고 진행됨 {\"marker\":2,\"phase\":\"wave\",\"wave\":0,\"kills\":1,\"playTime\":8}",
+  "PASS 배치한 영웅이 실제 공격 동작 Idle, 1H_Melee_Attack_Slice_Horizontal, 1H_Melee_Attack_Slice_Diagonal",
+  "longtasks>=200ms [[8327,554],[8974,2180],[20924,539],[28790,256],[147269,614],[155423,302],[155898,279]]",
   "PASS 스크립트 오류 없음 "
  ]
 }

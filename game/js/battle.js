@@ -1,13 +1,13 @@
 // 전투: 주인공 직접 조작(조작 모드) ↔ 영웅 배치·소환·합성(지휘 모드), 육각 격자 몬스터 판정, HUD
-import { World } from './scene3d.js?v=20261106g';
-import { RIGS } from './units.js?v=20261106g';
-import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106g';
-import { monsterTick, previewPaths } from './rules.js?v=20261106g';
-import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106g';
-import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106g';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106g';
-import { face } from './assets.js?v=20261106g';
-import { sfx } from './audio.js?v=20261106g';
+import { World } from './scene3d.js?v=20261106h';
+import { RIGS } from './units.js?v=20261106h';
+import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106h';
+import { monsterTick, previewPaths } from './rules.js?v=20261106h';
+import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106h';
+import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106h';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106h';
+import { face } from './assets.js?v=20261106h';
+import { sfx } from './audio.js?v=20261106h';
 
 const PREP_DEFAULT = 60, REST = 20;
 // 3D 모델 배정: 몬스터 → 해골 군단, 영웅 → 병과별 모델 + 영웅마다 색 (같은 모델을 구분)
@@ -57,15 +57,20 @@ export class Battle {
     this.world = new World(this.canvas); this.world.buildMap(this.map);
     this.buildHud();
     this.spawnLeon();
-    this.world.prewarm(['sk_minion', 'sk_warrior', 'sk_rogue', 'boss', 'sword', 'spear', 'archer', 'gunner', 'mage']);
     const s = this.map.start[0]; const w = toWorld(Math.floor(this.map.cols * 0.35), s[1]);
     this.world.setCam(this.leon.x + 2, this.leon.z, 15); this.world.cam.x = w.x; this.world.cam.z = w.z; this.world.cam.dist = 30;
     this.bindInput();
     this.onResize(); this.setMode('control');
-    this.last = performance.now();
-    this.raf = requestAnimationFrame(t => this.frame(t));
-    if (this.phase === 'starting') this.startWave();
-    if (this.hintStep === 0) this.nextHint();
+    // 셰이더·텍스처를 멈춤 없이 준비한 뒤 전투 시작 (준비 중에는 안내만 표시)
+    this.ready = false;
+    const wait = document.createElement('div'); wait.className = 'bprep'; wait.textContent = '전장 준비 중…'; this.el.appendChild(wait);
+    this.world.prewarmAsync(['sk_minion', 'sk_warrior', 'sk_rogue', 'boss', 'sword', 'spear', 'archer', 'gunner', 'mage']).then(() => {
+      wait.remove(); if (this.dead) return;
+      this.ready = true; this.last = performance.now();
+      this.raf = requestAnimationFrame(t => this.frame(t));
+      if (this.phase === 'starting') this.startWave();
+      if (this.hintStep === 0) this.nextHint();
+    });
   }
 
   spawnLeon() {
@@ -476,6 +481,8 @@ export class Battle {
     if (this.playStart && !this.ended) this.playTime += rdt / (this.hitstop > 0 ? 0.08 : 1);
     this.update(dt, rdt);
     this.world.updateFx(dt); this.world.updateUnits(dt);
+    // 느린 기기 자동 대응: 처음 4초 평균 프레임이 30fps 미만이면 캐릭터 그림자를 끈다
+    if (!this._perfDone) { this._pf = this._pf || { t: 0, n: 0 }; this._pf.t += rdt; this._pf.n++; if (this._pf.t > 4) { this._perfDone = true; if (this._pf.t / this._pf.n > 1 / 30) this.world.setLowShadow(); } }
     this.shake = Math.max(0, this.shake - rdt * 2.5);
     if (this.camFollow && this.mode === 'control' && this.leon.alive) { this.world.cam.tx = this.leon.x; this.world.cam.tz = this.leon.z - 0.5; }
     this.world.setGrid(this.mode === 'command' || !!this.drag); // 육각 격자는 배치할 때만 표시

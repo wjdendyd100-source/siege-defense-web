@@ -1,7 +1,7 @@
 # 전투력·능력치 기준표(Google 시트 20261106-claude-plan-전투력-능력치-기준표)와 같은 식을 파이썬으로 계산해 교차 확인한다.
 # 시트의 입력값을 바꾸면 이 파일 맨 위 상수도 같이 바꿔서 다시 돌린다.  실행: python3 tools/combat_power_check.py
 import math
-BASE, SR, RR, MR = 1000, 2.2, 3.2, 0.8
+BASE, SR, RR, MR = 1000, 2.2, 2.3, 0.8
 CRIT, BLK, KOFF, KDEF, DEF2HP, DEFR = 2, 0.5, 20, 2.5, 10, 0.03
 ASU, CRU, BRU = 0.05, 0.01, 0.01
 RANKS = 'EDCBAS'

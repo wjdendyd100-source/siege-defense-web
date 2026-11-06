@@ -1,0 +1,35 @@
+// 직접 그린 단순 SVG 아이콘 (외부 아이콘 세트 미사용)
+const S = (body, vb = '0 0 64 64') => `<svg viewBox="${vb}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+export const ICON = {
+  sword: S('<path d="M46 8 L56 8 L56 18 L24 50"/><path d="M14 40 L24 50"/><path d="M18 52 L12 58"/><path d="M10 44 L20 54"/>'),
+  spear: S('<path d="M10 54 L46 18"/><path d="M42 10 L56 8 L54 22 L46 18 Z" fill="currentColor"/><path d="M18 40 L24 46"/>'),
+  archer: S('<path d="M18 8 C46 14 50 50 18 56"/><path d="M18 8 L18 56" stroke-width="2"/><path d="M10 32 L54 32"/><path d="M48 26 L56 32 L48 38"/>'),
+  gunner: S('<path d="M6 30 L50 30 L58 26"/><path d="M6 30 L6 38 L30 38 L34 46 L42 46 L40 38"/><path d="M50 30 L50 34"/>'),
+  cavalry: S('<path d="M20 56 L22 40 C14 36 12 26 18 18 L26 8 L30 16 C40 14 50 22 50 34 L44 36 L40 30 L34 34 L36 56"/><circle cx="26" cy="22" r="2" fill="currentColor"/>'),
+  healer: S('<path d="M26 8 H38 V26 H56 V38 H38 V56 H26 V38 H8 V26 H26 Z" fill="currentColor" stroke-width="2"/>'),
+  bard: S('<path d="M24 48 V12 L52 6 V40"/><circle cx="17" cy="48" r="8" fill="currentColor"/><circle cx="45" cy="42" r="8" fill="currentColor"/>'),
+  mage: S('<path d="M32 4 L37 22 L56 22 L41 33 L47 52 L32 41 L17 52 L23 33 L8 22 L27 22 Z" fill="currentColor" stroke-width="2"/>'),
+  attack: S('<path d="M12 12 L44 44"/><path d="M52 12 L20 44"/><path d="M38 50 L50 38"/><path d="M14 38 L26 50"/><path d="M44 44 L54 54"/><path d="M20 44 L10 54"/>'),
+  slam: S('<path d="M32 6 V40"/><path d="M20 30 L32 42 L44 30"/><path d="M8 54 H56"/><path d="M14 48 L8 54 L14 60" stroke-width="3"/><path d="M50 48 L56 54 L50 60" stroke-width="3"/>'),
+  thrust: S('<path d="M6 32 H46"/><path d="M40 20 L58 32 L40 44 Z" fill="currentColor"/><path d="M10 22 H24"/><path d="M10 42 H24"/>'),
+  whirl: S('<path d="M50 32 A18 18 0 1 1 32 14"/><path d="M26 6 L34 14 L26 22"/><path d="M40 32 A8 8 0 1 1 32 24"/>'),
+  run: S('<path d="M10 16 L26 32 L10 48"/><path d="M28 16 L44 32 L28 48"/><path d="M46 16 L58 32 L46 48" stroke-width="3"/>'),
+  dodge: S('<circle cx="40" cy="22" r="7"/><path d="M38 30 L30 46 L40 56"/><path d="M30 46 L20 54"/><path d="M8 24 H24"/><path d="M4 34 H20"/><path d="M8 44 H18"/>'),
+  guard: S('<path d="M32 6 L54 14 V30 C54 44 44 54 32 58 C20 54 10 44 10 30 V14 Z"/><path d="M32 16 V48" stroke-width="3"/>'),
+  auto: S('<path d="M32 8 A24 24 0 1 1 10 22"/><path d="M6 10 L10 24 L24 20"/>'),
+  command: S('<path d="M14 58 V8"/><path d="M14 10 L50 14 L40 24 L50 34 L14 30" fill="currentColor"/>'),
+  control: S('<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="8" fill="currentColor"/>'),
+  pause: S('<path d="M22 14 V50"/><path d="M42 14 V50"/>', '0 0 64 64'),
+  summon: S('<path d="M32 6 L38 26 L58 32 L38 38 L32 58 L26 38 L6 32 L26 26 Z" fill="currentColor" stroke-width="2"/>'),
+  merge: S('<path d="M12 12 L30 30"/><path d="M52 12 L34 30"/><path d="M32 30 V56"/><path d="M22 46 L32 56 L42 46"/>'),
+  sell: S('<circle cx="32" cy="32" r="22"/><path d="M40 22 C36 18 24 18 24 26 C24 34 40 30 40 38 C40 46 28 46 24 42"/><path d="M32 14 V50"/>'),
+  coin: '<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="#e9b949" stroke="#8a5d14" stroke-width="4"/><circle cx="32" cy="32" r="17" fill="none" stroke="#fff3c4" stroke-width="3"/><path d="M32 20 L35 29 L44 32 L35 35 L32 44 L29 35 L20 32 L29 29 Z" fill="#8a5d14"/></svg>',
+  crystal: '<svg viewBox="0 0 64 64"><path d="M32 4 L52 22 L32 60 L12 22 Z" fill="#5aa9ff" stroke="#1d3f8a" stroke-width="3"/><path d="M12 22 H52 M32 4 L24 22 L32 60 L40 22 Z" fill="none" stroke="#d6ecff" stroke-width="2"/></svg>',
+  heart: '<svg viewBox="0 0 64 64"><path d="M32 56 C10 40 6 28 10 18 C16 6 30 8 32 18 C34 8 48 6 54 18 C58 28 54 40 32 56 Z" fill="#e0453a" stroke="#6b1410" stroke-width="3"/></svg>',
+  star: '<svg viewBox="0 0 64 64"><path d="M32 4 L40 24 L62 24 L44 38 L51 60 L32 47 L13 60 L20 38 L2 24 L24 24 Z" fill="#ffd34d" stroke="#8a5d14" stroke-width="3"/></svg>',
+  lock: S('<rect x="14" y="28" width="36" height="28" rx="4" fill="currentColor"/><path d="M22 28 V20 A10 10 0 0 1 42 20 V28"/>'),
+  back: S('<path d="M40 10 L18 32 L40 54"/>'),
+  route: S('<path d="M8 50 C20 50 20 14 32 14 C44 14 44 50 56 50"/><path d="M48 44 L56 50 L48 56"/>'),
+};
+export const classIcon = cls => ICON[cls] || ICON.sword;
+export function starsHtml(n, size = '1em') { return `<span class="stars" style="--sz:${size}">${'<i></i>'.repeat(n)}</span>`; }

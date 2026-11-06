@@ -1,10 +1,10 @@
 // 앱 셸: 화면 전환·저장·해상도. 타이틀 → 로비 → 스토리/스테이지/영웅/소환/편성
-import { loadAll, face, full } from './assets.js?v=20261106f';
-import { Battle, heroStats } from './battle.js?v=20261106f';
-import { HEROES, CLASSES, CLASS_ORDER, RANKS, RANK_COLOR, STORIES, STAGES, PROGRESSION, SPEAKERS, GACHA_RATE, GACHA_COST, PROTAGONIST } from './data.js?v=20261106f';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106f';
-import { scaleOf } from './layout.js?v=20261106f';
-import { sfx, setSfx } from './audio.js?v=20261106f';
+import { loadAll, face, full } from './assets.js?v=20261106g';
+import { Battle, heroStats } from './battle.js?v=20261106g';
+import { HEROES, CLASSES, CLASS_ORDER, RANKS, RANK_COLOR, STORIES, STAGES, PROGRESSION, SPEAKERS, GACHA_RATE, GACHA_COST, PROTAGONIST } from './data.js?v=20261106g';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106g';
+import { scaleOf } from './layout.js?v=20261106g';
+import { sfx, setSfx } from './audio.js?v=20261106g';
 
 const SAVE_KEY = 'edelwald_save_v1';
 const GAME_TITLE = '에델발트 연대기';
@@ -39,7 +39,12 @@ class App {
   isUnlocked(id) { const i = PROGRESSION.indexOf(id); if (i < 0) return false; return i === 0 || this.isCleared(PROGRESSION[i - 1]); }
   owned() { return Object.keys(this.save.owned).filter(k => this.save.owned[k] > 0); }
 
-  show(fn, ...a) { if (this.battle) { this.battle.destroy(); this.battle = null; } this.screen.innerHTML = ''; this.screen.className = ''; fn.call(this, ...a); }
+  // 화면 전환: #screen 요소를 새것으로 바꿔 이전 화면이 붙인 이벤트(예: 대화 탭)가 다음 화면에 남지 않게 한다
+  show(fn, ...a) {
+    if (this.battle) { this.battle.destroy(); this.battle = null; }
+    const fresh = this.screen.cloneNode(false); fresh.className = ''; this.screen.replaceWith(fresh); this.screen = fresh;
+    fn.call(this, ...a);
+  }
 
   // ───────── 타이틀
   title() {
@@ -47,7 +52,7 @@ class App {
     this.screen.innerHTML = `<div class="bg" style="background-image:url(assets/bg_title.jpg)"></div><div class="shade"></div>
       <div class="logo"><div class="crest">${ICON.summon}</div><h1>${GAME_TITLE}</h1><div class="sub">${GAME_SUB}</div><div class="tag">영웅 수집형 육각 타워 디펜스 · 웹 프로토타입</div></div>
       <button class="btn gold big start">화면을 눌러 시작</button>
-      <div class="ver">버전 11.06-F · 3D 캐릭터</div><div class="foot">3D 캐릭터·애니메이션 KayKit by Kay Lousberg (CC0) · 일러스트·효과음은 이 프로젝트용 제작 · 글꼴 Noto Sans/Serif KR (SIL OFL) · three.js (MIT)</div>`;
+      <div class="ver">버전 11.06-G · 3D 캐릭터</div><div class="foot">3D 캐릭터·애니메이션 KayKit by Kay Lousberg (CC0) · 일러스트·효과음은 이 프로젝트용 제작 · 글꼴 Noto Sans/Serif KR (SIL OFL) · three.js (MIT)</div>`;
     this.screen.querySelector('.start').addEventListener('click', () => { sfx('ui'); this.tryFullscreen(); this.show(this.lobby); });
   }
   tryFullscreen() { try { const d = document.documentElement; if (matchMedia('(pointer:coarse)').matches && d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen().then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { })).catch(() => { }); } catch { } }
@@ -121,18 +126,21 @@ class App {
       <div class="actor l"></div><div class="actor r"></div>
       <div class="vn-box frame"><div class="vn-name"></div><div class="vn-text"></div><div class="vn-next">▼</div></div>
       <div class="vn-ctl"><button class="pill" data-a="auto">자동</button><button class="pill" data-a="skip">건너뛰기</button></div>`;
-    let i = -1, typing = null, line = '', auto = false, autoT = null; const nameEl = this.screen.querySelector('.vn-name'), textEl = this.screen.querySelector('.vn-text');
+    let i = -1, typing = null, line = '', auto = false, autoT = null, ended = false;
+    // 대화 종료는 한 번만
+    const finish = () => { if (ended) return; ended = true; clearInterval(typing); clearTimeout(autoT); done(); };
+    const nameEl = this.screen.querySelector('.vn-name'), textEl = this.screen.querySelector('.vn-text');
     const L = this.screen.querySelector('.actor.l'), R = this.screen.querySelector('.actor.r');
     const next = () => {
       if (typing) { clearInterval(typing); typing = null; textEl.textContent = line; return; }
-      i++; if (i >= lines.length) { clearTimeout(autoT); done(); return; }
+      i++; if (i >= lines.length) { clearTimeout(autoT); finish(); return; }
       const [kind, who, text] = lines[i]; line = text; let n = 0; textEl.textContent = '';
       if (kind === 'narr') { nameEl.style.visibility = 'hidden'; textEl.classList.add('narr'); L.classList.remove('on'); R.classList.remove('on'); }
       else { const sp = SPEAKERS[who]; nameEl.style.visibility = ''; nameEl.textContent = sp.name; textEl.classList.remove('narr');
         const side = who === 'leon' ? L : R, other = side === L ? R : L; side.innerHTML = `<img src="${full(sp.art)}" alt="">`; side.classList.add('on', 'speak'); other.classList.remove('speak'); }
       typing = setInterval(() => { n += 1; textEl.textContent = line.slice(0, n); if (n >= line.length) { clearInterval(typing); typing = null; if (auto) autoT = setTimeout(next, 1400); } }, 28);
     };
-    this.screen.addEventListener('click', e => { const a = e.target.closest('[data-a]'); if (a) { if (a.dataset.a === 'skip') { clearInterval(typing); clearTimeout(autoT); done(); } else { auto = !auto; a.classList.toggle('on', auto); if (auto && !typing) next(); } return; } sfx('ui', 0.4); clearTimeout(autoT); next(); });
+    this.screen.addEventListener('click', e => { if (ended) return; const a = e.target.closest('[data-a]'); if (a) { if (a.dataset.a === 'skip') { finish(); } else { auto = !auto; a.classList.toggle('on', auto); if (auto && !typing) next(); } return; } sfx('ui', 0.4); clearTimeout(autoT); next(); });
     next();
   }
 

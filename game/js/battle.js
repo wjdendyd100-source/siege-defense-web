@@ -1,13 +1,13 @@
 // 전투: 주인공 직접 조작(조작 모드) ↔ 영웅 배치·소환·합성(지휘 모드), 육각 격자 몬스터 판정, HUD
-import { World } from './scene3d.js?v=20261106f';
-import { RIGS } from './units.js?v=20261106f';
-import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106f';
-import { monsterTick, previewPaths } from './rules.js?v=20261106f';
-import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106f';
-import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106f';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106f';
-import { face } from './assets.js?v=20261106f';
-import { sfx } from './audio.js?v=20261106f';
+import { World } from './scene3d.js?v=20261106g';
+import { RIGS } from './units.js?v=20261106g';
+import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106g';
+import { monsterTick, previewPaths } from './rules.js?v=20261106g';
+import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106g';
+import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106g';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106g';
+import { face } from './assets.js?v=20261106g';
+import { sfx } from './audio.js?v=20261106g';
 
 const PREP_DEFAULT = 60, REST = 20;
 // 3D 모델 배정: 몬스터 → 해골 군단, 영웅 → 병과별 모델 + 영웅마다 색 (같은 모델을 구분)

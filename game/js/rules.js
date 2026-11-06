@@ -1,6 +1,6 @@
 // 몬스터 이동·붙잡힘·대기 공격 판정 (참조 정본 부록 A 순서를 그대로 따른다)
 // ① 통과 ② 직진 반복 ③ 대각선 한 마리 → ② ④ 대기/공격. 순수 함수: 입력 상태를 직접 갱신하고 사건 목록을 돌려준다.
-import { key, fwd, upRight, downRight, progressX } from './hex.js?v=20261106f';
+import { key, fwd, upRight, downRight, progressX } from './hex.js?v=20261106g';
 
 // st = { map, monsters:[{id,c,r,order,held,diagPref}], heroes:[{id,c,r,holding}] }  (heroes는 경로 위 유닛만)
 export function monsterTick(st) {

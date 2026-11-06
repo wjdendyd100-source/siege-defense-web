@@ -52,6 +52,12 @@ const checks = []; const check = (ok, name, detail = '') => { checks.push({ ok, 
     const uiHits = ui.filter(e => { const q = e.getBoundingClientRect(); return q.width > 0 && !(r.right <= q.left || r.left >= q.right || r.bottom <= q.top || r.top >= q.bottom); }).map(e => e.dataset.l || e.dataset.b || e.className);
     return { shown: true, hit: hit || uiHits.length > 0, uiHits, tip: [r.left, r.top, r.right, r.bottom].map(Math.round), leon: [lx0, ly0, lx1, ly1].map(Math.round), text: tip.textContent };
   });
+  // 회귀 검사: 대화를 거쳐 들어온 전투에서 버튼을 짧게 탭해도 전투가 다시 시작되면 안 된다 (2026-11-06 사용자 신고 버그)
+  await p.evaluate(() => { window.__app.battle.__marker = 1; });
+  for (const b of ['attack', 'attack', 'attack', 'dodge', 'run', 'run']) { await tap(...(await center(`[data-b="${b}"]`))); await p.waitForTimeout(350); }
+  await tap(W * 0.6, H * 0.45); await p.waitForTimeout(350); // 빈 전장도 탭
+  const same = await p.evaluate(() => window.__app.battle && window.__app.battle.__marker === 1);
+  check(same, '버튼·전장을 짧게 탭해도 전투가 다시 시작되지 않음 (대화 → 전투 경로)');
   let o = await overlap(); check(o.shown && !o.hit, '튜토리얼 안내가 레온·HUD를 가리지 않음 (전투 시작)', JSON.stringify(o));
 
   // ── 플레이: 조이스틱 손가락(1)을 누른 채 가장 가까운 몬스터 쪽으로, 가까우면 공격(2) 연타·스킬
@@ -93,6 +99,50 @@ const checks = []; const check = (ok, name, detail = '') => { checks.push({ ok, 
   check(!res.inBattle || res.ended, '전투가 끝까지 진행됨', JSON.stringify(res));
   const need = ['레온:1H_Melee_Attack_Slice_Diagonal', '레온:Walking_A', '몬스터:Walking_D_Skeletons'];
   check(need.every(a => animSeen.has(a)), '레온·몬스터 실제 애니메이션 재생', [...animSeen].join(', '));
+  // ── 2단계: 결과 → 에필로그 → 스테이지 목록 → 스테이지 1 → 편성 → 전투 (소환·카드 끌어 배치·지휘 모드·일시정지·배속·자동)
+  await tapSel('.result [data-r="next"]'); await p.waitForTimeout(600);
+  for (let i = 0; i < 20 && !(await p.$('.node')); i++) { await tap(W / 2, H * 0.55); await p.waitForTimeout(400); }
+  await shot('09_stage_list');
+  await tapSel('.node.open'); await p.waitForTimeout(700); await shot('10_party');
+  await tapSel('.go'); await p.waitForSelector('.battle', { timeout: 20000 }); await p.waitForTimeout(1200);
+  await p.evaluate(() => { window.__app.battle.__marker = 2; });
+  const st0 = await p.evaluate(() => { const B = window.__app.battle; return { gold: B.gold, hand: B.hand.length, heroes: B.heroes.length, phase: B.phase }; });
+  await tapSel('.mini-summon'); await p.waitForTimeout(500); await tapSel('.mini-summon'); await p.waitForTimeout(600);
+  const st1 = await p.evaluate(() => { const B = window.__app.battle; return { gold: B.gold, hand: B.hand.length }; });
+  check(st1.hand === st0.hand + 2 && st1.gold < st0.gold, '소환 버튼 탭 → 카드 2장, 골드 감소', JSON.stringify([st0, st1]));
+  // 카드를 위로 끌어 경로 위 칸(6,3)에 놓기 (근접 영웅은 길 위에 있어야 싸움)
+  const card = await center('.ctrl-cards .card:not(.empty)');
+  const proj = () => p.evaluate(() => { const B = window.__app.battle, c = 6, r = 3; const q = B.world.project(Math.sqrt(3) * (c + 0.5 * (r & 1)), 0, 1.5 * r); return [q.x, q.y]; });
+  // 사람처럼: 먼저 위로 끌어올린 뒤(카드 줄 가로 스크롤과 구분) 목표 칸으로. 끌기 시작하면 카메라가 멀어지므로 목표 위치를 매번 다시 계산
+  await down(5, ...card); for (let k = 1; k <= 4; k++) { await move(5, card[0], card[1] - 15 * k); await p.waitForTimeout(40); }
+  await p.waitForTimeout(500); // 카메라가 멀어지는 동안 대기
+  let cur = [card[0], card[1] - 60];
+  for (let k = 1; k <= 12; k++) { const tgt = await proj(); cur = [cur[0] + (tgt[0] - cur[0]) * 0.35, cur[1] + (tgt[1] - cur[1]) * 0.35]; await move(5, ...cur); await p.waitForTimeout(60); }
+  const tgtF = await proj(); await move(5, ...tgtF); await p.waitForTimeout(250);
+  say('drag', JSON.stringify(await p.evaluate(() => { const d = window.__app.battle.drag; return d ? { cell: d.cell, ok: d.ok, why: d.why } : null; })));
+  await up(5); await p.waitForTimeout(700);
+  const st2 = await p.evaluate(() => { const B = window.__app.battle; return { heroes: B.heroes.map(h => [h.hid, h.c, h.r]), hand: B.hand.length }; });
+  check(st2.heroes.length === 1 && st2.hand === st1.hand - 1, '카드를 끌어 전장에 놓으면 영웅 배치', JSON.stringify(st2)); await shot('11_hero_placed');
+  await tapSel('.modeb'); await p.waitForTimeout(600);
+  const mode1 = await p.evaluate(() => window.__app.battle.mode); await shot('12_command_mode');
+  await tapSel('.modeb'); await p.waitForTimeout(400);
+  const mode2 = await p.evaluate(() => window.__app.battle.mode);
+  check(mode1 === 'command' && mode2 === 'control', '모드 버튼 탭 → 지휘/조작 전환', mode1 + '→' + mode2);
+  await tapSel('[data-b="pause"]'); await p.waitForTimeout(500);
+  const paused = await p.evaluate(() => window.__app.battle.paused); await shot('13_pause');
+  await tapSel('[data-p="resume"]'); await p.waitForTimeout(400);
+  const resumed = await p.evaluate(() => !window.__app.battle.paused);
+  check(paused && resumed, '일시정지 → 계속하기', `${paused} ${resumed}`);
+  await tapSel('[data-b="speed"]'); await p.waitForTimeout(300);
+  const spd = await p.evaluate(() => window.__app.battle.speed); await tapSel('[data-b="speed"]');
+  check(spd === 2, '배속 버튼 탭 → 2배속', String(spd));
+  await tapSel('[data-b="go"]'); await p.waitForTimeout(300); await tapSel('[data-b="auto"]');
+  const heroAnims = new Set();
+  for (let i = 0; i < 40; i++) { await p.waitForTimeout(500); const a = await p.evaluate(() => window.__app.battle ? window.__app.battle.heroes.map(h => h.view.cur && h.view.cur.getClip().name) : []); a.forEach(x => heroAnims.add(x)); }
+  await shot('14_stage_fight');
+  const st3 = await p.evaluate(() => { const B = window.__app.battle; return { marker: B && B.__marker, phase: B && B.phase, wave: B && B.waveIdx, kills: B && B.kills, playTime: B && Math.round(B.playTime) }; });
+  check(st3.marker === 2 && st3.playTime >= 8, '스테이지 전투가 다시 시작되지 않고 진행됨', JSON.stringify(st3));
+  check([...heroAnims].some(a => /Attack|Shoot|Spell/.test(a || '')), '배치한 영웅이 실제 공격 동작', [...heroAnims].join(', '));
   const lt = await p.evaluate(() => window.__lt.filter(x => x[1] >= 200)); say('longtasks>=200ms', JSON.stringify(lt));
   check(errors.length === 0, '스크립트 오류 없음', errors.slice(0, 5).join(' | '));
   const video = await p.video().path(); await ctx.close(); await b.close();

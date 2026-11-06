@@ -1,7 +1,8 @@
 // 3D 전장: 원근 카메라(전략 게임식 내려다보는 각도), 지면, 성문 소품, 스프라이트 유닛, 효과.
 import * as THREE from 'three';
-import { A, FACING, fxTex } from './assets.js?v=20261106c';
-import { toWorld, SQ3, key } from './hex.js?v=20261106c';
+import { A, fxTex } from './assets.js?v=20261106d';
+import { Unit3D } from './units.js?v=20261106d';
+import { toWorld, SQ3, key } from './hex.js?v=20261106d';
 
 export class World {
   constructor(canvas) {
@@ -31,7 +32,7 @@ export class World {
     // 월드 좌표를 그대로 UV로 쓰는 평면 (텍스처 반복 단위 = unit)
     const flat = (geo) => { const pos = geo.attributes.position, uv = geo.attributes.uv; for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i), -pos.getY(i)); uv.needsUpdate = true; return geo; };
     // 1) 안뜰 돌바닥
-    const stoneTex = rep(A.img.tex_stone, 6.5);
+    const stoneTex = rep(A.img.tex_stone, 4.2);
     const g0 = flat(new THREE.PlaneGeometry(W, D).translate(minX + W / 2, -(minZ + D / 2), 0));
     const ground = new THREE.Mesh(g0, new THREE.MeshLambertMaterial({ map: stoneTex }));
     ground.rotation.x = -Math.PI / 2; this.root.add(ground);
@@ -43,7 +44,7 @@ export class World {
     const layer = (m, mat, y) => { const me = new THREE.Mesh(flat(new THREE.ShapeGeometry(shapeOf(m), 1)), mat); me.rotation.x = -Math.PI / 2; me.position.y = y; this.root.add(me); return me; };
     layer(0.55, new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.16, depthWrite: false }), 0.004);
     layer(0.22, new THREE.MeshLambertMaterial({ color: '#d8cfbb' }), 0.008);            // 연석
-    layer(0.0, new THREE.MeshLambertMaterial({ map: rep(A.img.tex_cobble, 3.2) }), 0.012); // 포장길
+    layer(0.0, new THREE.MeshLambertMaterial({ map: rep(A.img.tex_cobble, 2.2) }), 0.012); // 포장길
     // 3) 바닥 장식: 금색 나침반 문양(시안의 원형 문장)과 가장자리 어둡게
     const cx = mw * 0.5, cz = (lane.midZ);
     const deco = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: compassTex(), transparent: true, depthWrite: false, opacity: 0.85 }));
@@ -134,28 +135,35 @@ export class World {
     }
   }
 
-  // ── 스프라이트 유닛
-  makeUnit(art, height) {
-    const mat = new THREE.SpriteMaterial({ map: A.tex[art], transparent: true, depthWrite: false });
-    const sp = new THREE.Sprite(mat); sp.center.set(0.5, 0.03);
-    const asp = A.aspect[art];
-    sp.scale.set(height * asp, height, 1);
+  // ── 3D 유닛 (units.js). 발밑 그림자는 가벼운 원판으로 둔다.
+  unit(rig, opts = {}) {
+    const u = new Unit3D(this.root, rig, opts);
     const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: fxTex('shadow'), transparent: true, depthWrite: false }));
-    sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.scale.set(Math.min(2.6, height * asp * 0.9), height * 0.35, 1);
-    this.root.add(sp); this.root.add(sh);
-    return { sp, sh, mat, art, height, asp, face: FACING[art] || 1, flipped: false };
+    sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; const r = u.height * 0.55; sh.scale.set(r * 1.4, r, 1); this.root.add(sh); u.sh = sh;
+    (this.units || (this.units = new Set())).add(u); return u;
   }
-  setFacing(u, dir) { // dir: 1 오른쪽, -1 왼쪽
-    const want = dir !== u.face;
-    if (want !== u.flipped) { u.flipped = want; u.mat.map = want ? A.texFlip[u.art] : A.tex[u.art]; u.mat.needsUpdate = true; }
+  placeUnit(u, x, z, y = 0) { u.set(x, y, z); u.sh.position.set(x, 0.02, z + 0.05); }
+  removeUnit(u) { if (!u) return; this.units && this.units.delete(u); u.dispose(); this.root.remove(u.sh); u.sh.material.dispose(); u.sh.geometry.dispose(); }
+  // 쓰러지는 동작을 끝까지 보여 준 뒤 서서히 가라앉혀 지운다 (게임 판정과는 분리)
+  dieUnit(u, sink = 0.8) {
+    if (!u || u._dying) return; u._dying = true;
+    u.die(() => { let t = 0; this.addFx({ obj: u.root, t: 0, life: sink, update: (f, dt) => { t += dt; u.root.position.y = -t * 0.6; u.setOpacity(Math.max(0, 1 - t / sink)); }, keep: true, onEnd: () => this.removeUnit(u) }); });
   }
-  placeUnit(u, x, z, y = 0, sx = 1, sy = 1) {
-    u.sp.position.set(x, y, z); u.sp.scale.set(u.height * u.asp * sx, u.height * sy, 1);
-    u.sh.position.set(x, 0.02, z + 0.1);
-    u.sp.renderOrder = 1000 + Math.round(z * 20);
+  // 전투 중 처음 나타나는 모델의 셰이더 컴파일로 화면이 멈추지 않도록, 시작할 때 미리 한 번씩 컴파일해 둔다
+  prewarm(rigs) {
+    const tmp = rigs.map(r => this.unit(r)); const c = this.cam;
+    tmp.forEach((u, i) => this.placeUnit(u, c.x + (i - rigs.length / 2) * 1.2, c.z, 0));
+    const n0 = this.fx.length; // 효과 종류도 한 번씩 만들어 텍스처·셰이더를 미리 올린다
+    for (const t of ['glow', 'spark', 'note']) { this.spriteFx(t, '#fff', c.x, 1, c.z, 1, 1); this.spriteFx(t, '#fff', c.x, 1, c.z, 1, 1, { normal: true }); }
+    this.slash(c.x, c.z, { x: 1, z: 0 }, 1); this.ring(c.x, c.z, 1, '#fff'); this.beam(c.x, 1, c.z, c.x + 1, 1, c.z, '#fff');
+    if (this.grid) this.grid.visible = true;
+    this.updateCam(1); this.renderer.compile(this.scene, this.camera); this.render();
+    if (this.grid) this.grid.visible = false;
+    // 재질을 버리면 컴파일한 셰이더도 함께 버려지므로, 장면에서만 빼고 재질은 남겨 둔다
+    this._warm = [...this.fx.splice(n0).map(f => f.obj), ...tmp];
+    for (const o of this._warm) { if (o.isObject3D) this.root.remove(o); else { this.root.remove(o.root); this.root.remove(o.sh); this.units.delete(o); o.mixer.stopAllAction(); } }
   }
-  removeUnit(u) { this.root.remove(u.sp); this.root.remove(u.sh); u.mat.dispose(); u.sh.material.dispose(); u.sh.geometry.dispose(); }
-
+  updateUnits(dt) { if (this.units) for (const u of this.units) u.update(dt); }
   // ── 효과 (생성 후 life 동안 갱신)
   addFx(o) { this.fx.push(o); return o; }
   spriteFx(tex, color, x, y, z, size, life, opts = {}) {
@@ -184,16 +192,15 @@ export class World {
     const mesh = new THREE.Mesh(g, m); mesh.position.set(x0, y0, z0); mesh.lookAt(x1, y1, z1); mesh.renderOrder = 5002; this.root.add(mesh);
     return this.addFx({ obj: mesh, t: 0, life, fade: true, isMesh: true, thin: true });
   }
-  afterimage(u, opacity = 0.5, life = 0.25, tint = '#7fc8ff') {
-    const m = u.mat.clone(); m.color = new THREE.Color(tint); m.opacity = opacity; m.blending = THREE.AdditiveBlending;
-    const s = new THREE.Sprite(m); s.center.copy(u.sp.center); s.position.copy(u.sp.position); s.scale.copy(u.sp.scale); s.renderOrder = u.sp.renderOrder - 1; this.root.add(s);
-    return this.addFx({ obj: s, t: 0, life, fade: true, grow: 1, base: opacity, keepScale: true });
+  afterimage(u, opacity = 0.5, life = 0.25, tint = '#7fc8ff') { // 3D 유닛은 복제 대신 빛 잔상으로
+    const p = u.root.position; return this.spriteFx('glow', tint, p.x, p.y + u.height * 0.5, p.z, u.height * 0.9, life, { grow: 0.6 });
   }
   updateFx(dt) {
     for (let i = this.fx.length - 1; i >= 0; i--) {
       const f = this.fx[i]; f.t += dt; const k = f.t / f.life;
-      if (k >= 1) { this.root.remove(f.obj); f.obj.material.dispose(); if (f.obj.geometry && f.isMesh) f.obj.geometry.dispose(); this.fx.splice(i, 1); continue; }
+      if (k >= 1) { if (f.keep) { f.onEnd && f.onEnd(); } else { this.root.remove(f.obj); f.obj.material.dispose(); if (f.obj.geometry && f.isMesh) f.obj.geometry.dispose(); } this.fx.splice(i, 1); continue; }
       if (f.update) f.update(f, dt, k);
+      if (f.keep) continue;
       f.obj.position.x += f.vx ? f.vx * dt : 0; f.obj.position.y += f.vy ? f.vy * dt : 0; f.obj.position.z += f.vz ? f.vz * dt : 0;
       if (f.fade) f.obj.material.opacity = (f.base ?? 1) * (1 - k * k);
       if (f.ringTo) { const s = f.ringTo * (0.3 + 0.7 * Math.sqrt(k)); f.obj.scale.set(s, s, 1); }

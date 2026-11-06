@@ -1,6 +1,7 @@
 // 에셋 로딩: 전부 이 프로젝트에서 새로 생성한 이미지(game/assets). 교체 시 파일만 바꾸면 된다.
 // 레온 그림은 사용자 제공 시안(art_src/leon_concept_sheet.png)에서 tools/cut_leon.py로 잘라 만든다.
 import * as THREE from 'three';
+import { loadModels } from './units.js?v=20261106d';
 
 export const ART = [
   'hero_protagonist', 'hero_sera', 'hero_bran', 'hero_elise', 'hero_marco', 'hero_roderick', 'hero_amelia',
@@ -23,20 +24,15 @@ function loadImg(src) {
 }
 
 export async function loadAll(onProgress) {
-  const list = [...ART.map(n => [n, full(n)]), ['tex_stone', 'assets/tex_stone.jpg'], ['tex_cobble', 'assets/tex_cobble.jpg'],
+  // 전투 유닛은 3D 모델(units.js)이라 영웅·몬스터 2D 그림은 미리 GPU에 올리지 않는다 (대화·카드 화면은 그림 주소를 바로 쓴다)
+  const list = [['tex_stone', 'assets/tex_stone.jpg'], ['tex_cobble', 'assets/tex_cobble.jpg'],
     ['bg_title', 'assets/bg_title.jpg'], ['bg_village', 'assets/bg_village.jpg']];
   let done = 0;
-  await Promise.all(list.map(async ([n, src]) => {
-    A.img[n] = await loadImg(src);
-    done++; onProgress && onProgress(done / list.length);
-  }));
-  for (const n of ART) {
-    const img = A.img[n];
-    A.aspect[n] = img.width / img.height;
-    const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true;
-    const f = t.clone(); f.wrapS = THREE.RepeatWrapping; f.repeat.x = -1; f.offset.x = 1; f.needsUpdate = true;
-    A.tex[n] = t; A.texFlip[n] = f;
-  }
+  let mp = 0; const prog = () => onProgress && onProgress((done / list.length) * 0.3 + mp * 0.7);
+  await Promise.all([
+    ...list.map(async ([n, src]) => { A.img[n] = await loadImg(src); done++; prog(); }),
+    loadModels(p => { mp = p; prog(); }),
+  ]);
 }
 
 // 캔버스로 만드는 효과용 텍스처 (그라데이션·호·불꽃)

@@ -49,24 +49,24 @@ export const PROTAGONIST = {
   id: 'leon', name: '레온', title: '에델발트의 기사', art: 'hero_protagonist',
   hp: 620, atk: 22, def: 12, regen: 3, speed: 4.2, runMul: 1.55,
   combo: [ // 기본 공격 연속기 (던파식 3타 + 마무리)
-    { mul: 1.0, dur: 0.30, hitAt: 0.12, reach: 1.9, arc: 120, lunge: 0.35 },
-    { mul: 1.15, dur: 0.30, hitAt: 0.12, reach: 1.9, arc: 120, lunge: 0.35 },
-    { mul: 1.7, dur: 0.46, hitAt: 0.22, reach: 2.3, arc: 150, lunge: 0.8, knock: 0.6 },
+    { mul: 1.0, dur: 0.36, hitAt: 0.15, reach: 1.9, arc: 120, lunge: 0.35 },
+    { mul: 1.15, dur: 0.36, hitAt: 0.15, reach: 1.9, arc: 120, lunge: 0.35 },
+    { mul: 1.7, dur: 0.52, hitAt: 0.27, reach: 2.3, arc: 150, lunge: 0.8, knock: 0.6 },
   ],
   skills: {
     slam:   { name: '내려찍기', cd: 6,  mul: 3.2, radius: 2.0, stun: 1.2, dur: 0.6, hitAt: 0.38 },
     thrust: { name: '찌르기',   cd: 5,  mul: 2.6, length: 4.2, width: 1.0, dur: 0.42, hitAt: 0.10, dash: 3.2 },
     whirl:  { name: '회전베기', cd: 9,  mul: 0.75, hits: 6, radius: 1.8, dur: 1.2 },
   },
-  dodge: { cd: 1.1, dist: 3.4, dur: 0.28 },
+  dodge: { cd: 1.1, dist: 3.4, dur: 0.32 },
   guardReduce: 0.75,
   respawn: 5,
 };
 
 export const MONSTERS = {
-  goblin:     { name: '고블린 약탈자', art: 'mon_goblin',     hp: 60,   atk: 6,  as: 1.0, def: 0,  gold: 3,  scale: 0.85 },
-  orc:        { name: '오크 파쇄자',   art: 'mon_orc',        hp: 280,  atk: 16, as: 0.7, def: 10, gold: 8,  scale: 1.25 },
-  skeleton:   { name: '해골 궁수',     art: 'mon_skeleton',   hp: 75,   atk: 9,  as: 0.8, def: 2,  gold: 5,  scale: 1.0, ranged: 2 },
+  goblin:     { name: '해골 병사',     art: 'mon_goblin',     hp: 60,   atk: 6,  as: 1.0, def: 0,  gold: 3,  scale: 0.85 },
+  orc:        { name: '해골 전사',     art: 'mon_orc',        hp: 280,  atk: 16, as: 0.7, def: 10, gold: 8,  scale: 1.25 },
+  skeleton:   { name: '해골 석궁병',   art: 'mon_skeleton',   hp: 75,   atk: 9,  as: 0.8, def: 2,  gold: 5,  scale: 1.0, ranged: 2 },
   darkknight: { name: '타락한 흑기사', art: 'mon_darkknight', hp: 3400, atk: 42, as: 0.6, def: 30, gold: 120, scale: 1.7, boss: true },
 };
 
@@ -106,7 +106,7 @@ export const STORIES = [
   { id: 'story1', no: 1, title: '불타는 변경 마을', bg: 'bg_village', reward: { hero: 'toby', crystals: 300 },
     pre: [
       ['narr', null, '에델발트 왕국력 812년, 가을. 동쪽 숲 너머에서 연기가 피어올랐다.'],
-      ['say', 'toby', '기사님! 레온 기사님! 고블린들이… 마을을 덮쳤어요!'],
+      ['say', 'toby', '기사님! 레온 기사님! 해골들이… 땅에서 기어 나와 마을을 덮쳤어요!'],
       ['say', 'leon', '진정해라, 꼬마. 이름이 뭐지?'],
       ['say', 'toby', '토비요! 대장간 집 아들이에요. 저도 싸울 수 있어요!'],
       ['say', 'leon', '좋다, 토비. 내 뒤를 따라라. 길을 막으면 놈들은 지나가지 못한다.'],
@@ -114,27 +114,27 @@ export const STORIES = [
     battle: { map: 'straight3', lives: 99, gold: 0, summon: false, tick: 0.9, noFail: true, prep: 0,
       hint: true, waves: [W('goblin', 3, 3), W('goblin', 4, 2.5)] },
     post: [
-      ['say', 'toby', '해, 해냈어요! 고블린들이 도망쳐요!'],
+      ['say', 'toby', '해, 해냈어요! 해골들이 산산이 부서졌어요!'],
       ['say', 'leon', '잘 버텼다. 오늘부터 너는 내 종자다, 토비.'],
       ['narr', null, '【토비(E·검사)가 동료가 되었다】 이제 전투에서 영웅을 소환해 배치할 수 있다.'],
     ] },
   { id: 'story2', no: 2, title: '숲의 사냥꾼', bg: 'bg_village', reward: { hero: 'nina', crystals: 300 },
     pre: [
-      ['narr', null, '고블린의 흔적을 쫓아 숲으로 들어선 레온과 토비.'],
+      ['narr', null, '해골들이 기어 나온 무덤의 흔적을 쫓아 숲으로 들어선 레온과 토비.'],
       ['say', 'nina', '거기 멈춰요. 이 숲에서 함부로 칼을 휘두르면 곤란해요.'],
-      ['say', 'leon', '우리는 고블린을 쫓고 있다. 너는?'],
-      ['say', 'nina', '니나. 사냥꾼이에요. 놈들이 내 덫을 다 망가뜨렸거든요. …같이 가죠.'],
+      ['say', 'leon', '우리는 되살아난 해골들을 쫓고 있다. 너는?'],
+      ['say', 'nina', '니나. 사냥꾼이에요. 그 뼈다귀들이 내 덫을 다 망가뜨렸거든요. …같이 가죠.'],
     ],
     battle: { map: 'straight3', lives: 99, gold: 60, summon: true, party: ['toby'], tick: 0.85, noFail: true, prep: 20,
       waves: [W('goblin', 6, 2.2), W('skeleton', 3, 3)] },
     post: [
-      ['say', 'nina', '뼈다귀 궁수까지… 이건 평범한 습격이 아니에요.'],
+      ['say', 'nina', '석궁 쏘는 해골까지… 누군가 죽은 자들을 부리고 있어요.'],
       ['narr', null, '【니나(E·궁수)가 동료가 되었다】'],
     ] },
   { id: 'story3', no: 3, title: '성읍의 민병대', bg: 'bg_title', reward: { hero: 'hans', crystals: 400 },
     pre: [
       ['say', 'hans', '하하! 왕도의 기사가 이런 변경까지 오다니. 나는 한스, 이 성읍 민병대장이오.'],
-      ['say', 'leon', '오크 무리가 남하하고 있다. 성문을 지킬 창이 필요하다.'],
+      ['say', 'leon', '방패를 든 해골 전사들이 몰려오고 있다. 성문을 지킬 창이 필요하다.'],
       ['say', 'hans', '창이라면 우리 민병대가 제일이지. 앞은 검이, 뒤는 창이 맡는 거요!'],
     ],
     battle: { map: 'straight3', lives: 99, gold: 80, summon: true, party: ['toby', 'nina'], tick: 0.8, noFail: true, prep: 20,
@@ -152,7 +152,7 @@ export const STORIES = [
   { id: 'story5', no: 5, title: '흑기사의 그림자', bg: 'bg_village', reward: { crystals: 800 },
     pre: [
       ['narr', null, '모든 습격의 배후에는 한 사람이 있었다. 한때 왕국 최고의 기사였던 자.'],
-      ['say', 'leon', '…발터 경. 당신이 왜 괴물들을 이끄는 겁니까.'],
+      ['say', 'leon', '…발터 경. 당신이 왜 죽은 자들의 군단을 이끄는 겁니까.'],
       ['say', 'darkknight', '왕국은 이미 썩었다, 레온. 흰 성벽은 오늘 무너진다.'],
     ],
     battle: { map: 'straight3', lives: 99, gold: 120, summon: true, party: ['toby', 'nina', 'hans', 'lian'], tick: 0.8, noFail: true, prep: 20,

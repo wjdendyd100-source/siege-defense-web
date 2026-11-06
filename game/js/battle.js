@@ -1,14 +1,19 @@
 // 전투: 주인공 직접 조작(조작 모드) ↔ 영웅 배치·소환·합성(지휘 모드), 육각 격자 몬스터 판정, HUD
-import { World } from './scene3d.js?v=20261106c';
-import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106c';
-import { monsterTick, previewPaths } from './rules.js?v=20261106c';
-import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106c';
-import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106c';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106c';
-import { face } from './assets.js?v=20261106c';
-import { sfx } from './audio.js?v=20261106c';
+import { World } from './scene3d.js?v=20261106d';
+import { RIGS } from './units.js?v=20261106d';
+import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106d';
+import { monsterTick, previewPaths } from './rules.js?v=20261106d';
+import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106d';
+import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106d';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106d';
+import { face } from './assets.js?v=20261106d';
+import { sfx } from './audio.js?v=20261106d';
 
 const PREP_DEFAULT = 60, REST = 20;
+// 3D 모델 배정: 몬스터 → 해골 군단, 영웅 → 병과별 모델 + 영웅마다 색 (같은 모델을 구분)
+const MON_RIG = { goblin: 'sk_minion', orc: 'sk_warrior', skeleton: 'sk_rogue', darkknight: 'boss' };
+const HERO_TINT = { toby: '#d8c4a0', sera: '#f2f4ff', roderick: '#fff1d0', hans: '#c9b7a0', bran: '#a9b8c8', nina: '#b8d4a8', elise: '#9fc8a0', marco: '#d9b48c', lian: '#e8c8f0', isolde: '#b9a6ff', amelia: '#fff8e6' };
+const P_ANIM = RIGS.leon.anims;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const fmt = n => Math.ceil(n).toLocaleString('ko-KR');
 
@@ -52,8 +57,9 @@ export class Battle {
     this.world = new World(this.canvas); this.world.buildMap(this.map);
     this.buildHud();
     this.spawnLeon();
+    this.world.prewarm(['sk_minion', 'sk_warrior', 'sk_rogue', 'boss', 'sword', 'spear', 'archer', 'gunner', 'mage']);
     const s = this.map.start[0]; const w = toWorld(Math.floor(this.map.cols * 0.35), s[1]);
-    this.world.setCam(this.leon.x + 2, this.leon.z, 22); this.world.cam.x = w.x; this.world.cam.z = w.z; this.world.cam.dist = 30;
+    this.world.setCam(this.leon.x + 2, this.leon.z, 15); this.world.cam.x = w.x; this.world.cam.z = w.z; this.world.cam.dist = 30;
     this.bindInput();
     this.onResize(); this.setMode('control');
     this.last = performance.now();
@@ -72,7 +78,7 @@ export class Battle {
       cd: { slam: 0, thrust: 0, whirl: 0, dodge: 0 }, run: false, guard: false, auto: false, anchor: { x: w.x, z: w.z },
       invuln: 0, holding: null, cell: null, respawnT: 0, knock: { x: 0, z: 0 }, flash: 0, lv,
     };
-    this.leon.view = this.world.makeUnit(P.art, 2.25);
+    this.leon.view = this.world.unit('leon'); this.leon.view.faceNow(-1, 0);
   }
 
   // ───────────────────────── HUD
@@ -148,7 +154,7 @@ export class Battle {
     this.mode = m; this.hud.dataset.mode = m;
     const mb = this.q('.modeb'); mb.querySelector('.ic').innerHTML = m === 'control' ? ICON.command : ICON.control; mb.querySelector('.lb').textContent = m === 'control' ? '지휘' : '조작';
     if (m === 'command') { this.leon.anchor = { x: this.leon.x, z: this.leon.z }; this.input.mx = this.input.mz = 0; this.input.attack = false; this.leon.guard = false; this.world.cam.tdist = Math.max(this.world.cam.tdist, 30); this.camFollow = false; }
-    else { this.camFollow = true; this.world.cam.tdist = 22; }
+    else { this.camFollow = true; this.world.cam.tdist = 15; }
     this.renderCards(); this.hintEvent('mode');
   }
 
@@ -388,8 +394,7 @@ export class Battle {
   placeHero(hid, star, c, r, invested) {
     const st = heroStats(hid, star); const w = toWorld(c, r); const h = HEROES[hid];
     const hero = { uid: ++this.uidSeq, hid, star, c, r, x: w.x, z: w.z, hp: st.hp, max: st.hp, st, cls: h.cls, cd: 0.3, holding: null, alive: true, invested, onPath: this.map.isPath(c, r), anim: 0, flash: 0, charged: null };
-    hero.view = this.world.makeUnit(h.art, h.cls === 'cavalry' ? 2.4 : 1.9);
-    this.world.setFacing(hero.view, -1);
+    hero.view = this.world.unit(h.cls, { tint: HERO_TINT[hid] }); hero.view.faceNow(-1, 0); hero.view.play('cheer', { dur: 0.9 });
     this.heroes.push(hero); this.world.ring(w.x, w.z, 1.4, '#ffe08a', 0.5); sfx('summon', 0.6);
     return hero;
   }
@@ -403,7 +408,7 @@ export class Battle {
     this.world.ring(w.x, w.z, 1.2, '#9fd4ff', 0.35);
   }
   removeHero(hh, died) {
-    this.releaseHold(hh); hh.alive = false; this.world.removeUnit(hh.view); this.heroes.splice(this.heroes.indexOf(hh), 1);
+    this.releaseHold(hh); hh.alive = false; if (died) this.world.dieUnit(hh.view); else this.world.removeUnit(hh.view); this.heroes.splice(this.heroes.indexOf(hh), 1);
     if (this.selected && this.selected.ref === hh) { this.selected = null; this.renderPanel(); }
     if (died) this.deadThisWave.push({ hid: hh.hid, star: hh.star, invested: hh.invested });
   }
@@ -454,7 +459,7 @@ export class Battle {
       if (occ.has(key(c, r))) continue;
       const m = this.spawnQueue.shift(); m.c = c; m.r = r; m.pc = c - 1; m.pr = r; m.moveT = 0; occ.add(key(c, r));
       const w = toWorld(c, r); m.vx = w.x - 1.7; m.vz = w.z;
-      m.view = this.world.makeUnit(m.md.art, 1.75 * m.md.scale);
+      m.view = this.world.unit(MON_RIG[m.type], { scale: m.md.scale }); m.view.faceNow(1, 0); m.view.play('spawn', { dur: 0.75 }); this.world.spriteFx('glow', '#7a5cff', m.vx + 1.7, 0.3, m.vz, 2.2, 0.5, { grow: 1.6 });
       this.monsters.push(m);
     }
   }
@@ -470,7 +475,7 @@ export class Battle {
     const dt = rdt * this.speed * slow;
     if (this.playStart && !this.ended) this.playTime += rdt / (this.hitstop > 0 ? 0.08 : 1);
     this.update(dt, rdt);
-    this.world.updateFx(dt);
+    this.world.updateFx(dt); this.world.updateUnits(dt);
     this.shake = Math.max(0, this.shake - rdt * 2.5);
     if (this.camFollow && this.mode === 'control' && this.leon.alive) { this.world.cam.tx = this.leon.x; this.world.cam.tz = this.leon.z - 0.5; }
     this.world.setGrid(this.mode === 'command' || !!this.drag); // 육각 격자는 배치할 때만 표시
@@ -482,7 +487,7 @@ export class Battle {
 
   // 검증용: 화면 갱신 없이 시뮬레이션을 고정 간격으로 진행
   simulate(sec, step = 1 / 30) {
-    for (let t = 0; t < sec && !this.ended; t += step) { this.update(step * this.speed, step); this.world.updateFx(step); if (this.playStart) this.playTime += step; }
+    for (let t = 0; t < sec && !this.ended; t += step) { this.update(step * this.speed, step); this.world.updateFx(step); this.world.updateUnits(step * this.speed); if (this.playStart) this.playTime += step; }
     if (this.camFollow && this.mode === 'control') { this.world.cam.tx = this.leon.x; this.world.cam.tz = this.leon.z - 0.5; }
     this.world.updateCam(1); this.world.render(); this.drawOverlay(0); this.updateHud();
   }
@@ -550,6 +555,7 @@ export class Battle {
     const L = this.leon; const step = P.combo[L.comboIdx];
     const tgt = this.nearestMonster(L.x, L.z, step.reach + 1.2); if (tgt) this.faceTo(L, tgt.vx, tgt.vz);
     L.act = { kind: 'combo', t: 0, dur: step.dur, step, hit: false }; L.queued = false; sfx('swing', 0.8);
+    L.view.play('combo', { name: P_ANIM.combo[L.comboIdx], dur: step.dur * 1.35 });
     this.hintEvent('attack');
   }
   leonSkill(id) {
@@ -558,6 +564,7 @@ export class Battle {
     const reach = id === 'thrust' ? sk.length : id === 'slam' ? sk.radius + 1 : sk.radius + 0.5;
     const tgt = this.nearestMonster(L.x, L.z, reach + 0.5); if (tgt) this.faceTo(L, tgt.vx, tgt.vz);
     L.act = { kind: id, t: 0, dur: sk.dur, sk, hit: false, hitSet: new Set(), n: 0 }; L.cd[id] = sk.cd; L.guard = false;
+    if (id === 'whirl') L.view.play(id, { hold: true, speed: 1.6 }); else L.view.play(id, { dur: sk.dur * (id === 'slam' ? 1.5 : 1.3) });
     if (id === 'whirl') sfx('swing'); if (id === 'thrust') { sfx('swing'); this.world.afterimage(L.view, 0.5); }
     this.hintEvent(id);
   }
@@ -567,6 +574,7 @@ export class Battle {
     let dx = this.input.mx, dz = this.input.mz; const d = Math.hypot(dx, dz);
     if (d < 0.1) { dx = -L.dir.x; dz = -L.dir.z; } else { dx /= d; dz /= d; }
     L.act = { kind: 'dodge', t: 0, dur: P.dodge.dur, vx: dx * P.dodge.dist / P.dodge.dur, vz: dz * P.dodge.dist / P.dodge.dur }; L.cd.dodge = P.dodge.cd; L.invuln = P.dodge.dur + 0.05;
+    L.view.faceNow(dx, dz); L.view.play('dodge', { dur: P.dodge.dur * 1.4 });
     sfx('swing', 0.5);
   }
   hitMonsters(filter, mul, opts = {}) {
@@ -577,14 +585,15 @@ export class Battle {
       this.damageMonster(m, L.atk * mul, L.x, L.z, opts.knock || 0.25, '#fff2c0'); n++;
       if (opts.stun) m.stun = Math.max(m.stun, opts.stun);
     }
-    if (n) { this.hitstop = Math.max(this.hitstop, opts.stop ?? 0.06); this.shake = Math.max(this.shake, opts.shake ?? 0.15); sfx(opts.heavy ? 'heavy' : 'hit'); this.hintEvent('hit'); }
+    if (n) { this.hitstop = Math.max(this.hitstop, opts.stop ?? 0.06); this.shake = Math.max(this.shake, opts.shake ?? 0.15); sfx(opts.heavy ? 'heavy' : 'hit'); this.hintEvent('hit');
+      if ((opts.shake ?? 0.15) >= 0.3) this.world.cam.dist -= (opts.heavy ? 1.4 : 0.7); } // 강한 타격은 카메라가 순간 다가감
     return n;
   }
   updateLeon(dt) {
     const L = this.leon;
     for (const k in L.cd) L.cd[k] = Math.max(0, L.cd[k] - dt);
     L.invuln = Math.max(0, L.invuln - dt); L.flash = Math.max(0, L.flash - dt);
-    if (!L.alive) { L.respawnT -= dt; if (L.respawnT <= 0) { L.alive = true; L.hp = L.max; L.invuln = 1.5; L.view.sp.visible = true; L.view.sh.visible = true; this.world.ring(L.x, L.z, 2, '#9fd4ff'); this.toastMsg('레온 부활!'); } return; }
+    if (!L.alive) { L.respawnT -= dt; if (L.respawnT <= 0) { L.alive = true; L.hp = L.max; L.invuln = 1.5; L.view.revive(); L.view.sh.visible = true; this.world.ring(L.x, L.z, 2, '#9fd4ff'); this.toastMsg('레온 부활!'); } return; }
     L.hp = Math.min(L.max, L.hp + P.regen * dt);
     // 이동 입력 (키보드 WASD + 조이스틱). 화면 위쪽 = -z
     let mx = this.input.mx, mz = this.input.mz; const K = this.input.keys;
@@ -629,7 +638,7 @@ export class Battle {
           sfx('swing', 0.5);
         }
         const sp = P.speed * 0.5; L.x += mx * sp * dt; L.z += mz * sp * dt;
-        if (act.t >= act.dur) L.act = null;
+        if (act.t >= act.dur) { L.act = null; L.view.stopOne(); }
       } else if (act.kind === 'dodge') {
         L.x += act.vx * dt; L.z += act.vz * dt; if (Math.random() < 0.7) this.world.afterimage(L.view, 0.4, 0.22, '#9fd4ff');
         if (act.t >= act.dur) { L.act = null; if (L.queued) this.startCombo(); }
@@ -639,7 +648,8 @@ export class Battle {
       if (attackHeld) this.startCombo();
       else {
         const sp = P.speed * (L.run ? P.runMul : 1) * (L.guard ? 0.45 : 1);
-        if (mx || mz) { L.x += mx * sp * dt; L.z += mz * sp * dt; L.dir = { x: mx / Math.hypot(mx, mz), z: mz / Math.hypot(mx, mz) }; L.walk = (L.walk || 0) + dt * (L.run ? 14 : 10); this.hintEvent('move', dt * sp); }
+        if (mx || mz) { L.x += mx * sp * dt; L.z += mz * sp * dt; L.dir = { x: mx / Math.hypot(mx, mz), z: mz / Math.hypot(mx, mz) }; L.walk = (L.walk || 0) + dt * (L.run ? 14 : 10); this.hintEvent('move', dt * sp);
+          L.dustT = (L.dustT || 0) - dt; if (L.dustT <= 0) { L.dustT = L.run ? 0.12 : 0.26; this.world.spriteFx('glow', '#b9ab92', L.x - L.dir.x * 0.4, 0.15, L.z - L.dir.z * 0.4, L.run ? 0.9 : 0.6, 0.45, { vy: 0.6, grow: 2, normal: true }); } }
         else L.walk = 0;
       }
     }
@@ -662,9 +672,10 @@ export class Battle {
   damageLeon(amount, from) {
     const L = this.leon; if (!L.alive || L.invuln > 0) return;
     let d = dmgAfterDef(amount, L.def); if (L.guard) { d *= 1 - P.guardReduce; this.world.spriteFx('glow', '#9fd4ff', L.x, 1.2, L.z, 1.6, 0.2); }
-    L.hp -= d; L.flash = 0.15; this.addFloat(L.x, 2.4, L.z, Math.ceil(d), '#ff8070');
+    L.hp -= d; L.flash = 0.15; this.addFloat(L.x, 2.4, L.z, Math.ceil(d), '#ff8070'); L.view.flash(0.15);
+    if (L.guard) { L.view.play('guardHit', { dur: 0.3 }); sfx('hit', 0.4); } else if (!L.act) L.view.play('hit', { dur: 0.32 }); this.shake = Math.max(this.shake, 0.12);
     if (this.def.noFail && L.hp < 1) L.hp = 1;
-    if (L.hp <= 0) { L.alive = false; L.hp = 0; L.respawnT = P.respawn; L.act = null; this.releaseHold(L); L.view.sp.visible = false; L.view.sh.visible = false; this.toastMsg(`레온 쓰러짐… ${P.respawn}초 후 부활`); }
+    if (L.hp <= 0) { L.alive = false; L.hp = 0; L.respawnT = P.respawn; L.act = null; this.releaseHold(L); L.view.die(); L.view.sh.visible = false; this.toastMsg(`레온 쓰러짐… ${P.respawn}초 후 부활`); }
   }
 
   // ───────────────────────── 영웅
@@ -682,11 +693,11 @@ export class Battle {
         let tgt = null, lo = 0.999;
         for (const o of this.heroes) if (o.alive && hexDist(o.c, o.r, h.c, h.r) <= h.st.range && o.hp / o.max < lo) { lo = o.hp / o.max; tgt = o; }
         const L = this.leon; if (L.alive && L.cell && hexDist(L.cell[0], L.cell[1], h.c, h.r) <= h.st.range && L.hp / L.max < lo) tgt = L;
-        if (tgt) { const amt = h.st.heal * atkMul; tgt.hp = Math.min(tgt.max, tgt.hp + amt); h.cd = 1 / h.st.as; h.anim = 0.3; this.addFloat(tgt.x, 2.4, tgt.z, '+' + Math.ceil(amt), '#7dff9a');
+        if (tgt) { const amt = h.st.heal * atkMul; tgt.hp = Math.min(tgt.max, tgt.hp + amt); h.cd = 1 / h.st.as; h.anim = 0.3; h.view.face(tgt.x - h.x, tgt.z - h.z); h.view.play('attack', { dur: 0.8 }); this.addFloat(tgt.x, 2.4, tgt.z, '+' + Math.ceil(amt), '#7dff9a');
           for (let i = 0; i < 4; i++) this.world.spriteFx('glow', '#c8ffb0', tgt.x + (Math.random() - .5), 0.5, tgt.z + (Math.random() - .5) * .5, 0.5, 0.7, { vy: 1.6 }); sfx('heal', 0.5); continue; }
       }
       const tgt = this.heroTarget(h); if (!tgt) continue;
-      h.cd = 1 / h.st.as; h.anim = 0.25; this.world.setFacing(h.view, tgt.vx >= h.x ? 1 : -1);
+      h.cd = 1 / h.st.as; h.anim = 0.25; h.view.face(tgt.vx - h.x, tgt.vz - h.z); h.view.play('attack', { dur: Math.min(0.9, 0.85 / h.st.as) });
       let dmg = h.st.atk * atkMul;
       if (h.cls === 'cavalry' && h.charged !== tgt.id) { dmg *= cls.charge; h.charged = tgt.id; this.world.ring(tgt.vx, tgt.vz, 1.2, '#ffe08a', 0.3); }
       if (cls.group === 'melee' && h.cls !== 'spear') { this.world.slash(tgt.vx - (tgt.vx - h.x) * 0.3, tgt.vz, { x: tgt.vx - h.x, z: tgt.vz - h.z }, 1.3, '#fff0c8', 0.3, 0.16); this.damageMonster(tgt, dmg, h.x, h.z, 0.15, '#ffe9b0'); sfx('hit', 0.5); }
@@ -720,13 +731,16 @@ export class Battle {
   damageMonster(m, amount, fx, fz, knock, color) {
     if (!m.alive) return;
     const d = dmgAfterDef(amount, m.def); m.hp -= d; m.flash = 0.12;
+    if (m.view) { m.view.flash(0.12, '#ffffff'); if (m.hp > 0 && !m.view.one && (m.hitAnimT || 0) <= 0) { m.view.play('hit', { dur: 0.35 }); m.hitAnimT = 0.6; } }
     const dx = m.vx - fx, dz = m.vz - fz, l = Math.hypot(dx, dz) || 1; m.knock.x += dx / l * knock; m.knock.z += dz / l * knock;
     this.addFloat(m.vx, 1.8 * m.md.scale + 0.3, m.vz, Math.ceil(d), color);
     this.world.spriteFx('spark', '#ffe6b0', m.vx, 1.0 * m.md.scale, m.vz, 1.1, 0.16, { rot: 4 });
     if (m.hp <= 0) this.killMonster(m);
   }
   killMonster(m) {
-    m.alive = false; m.deadT = 0.6; this.kills++;
+    m.alive = false; m.deadT = 0; this.kills++;
+    if (m.view) { m.view.face(m.vx - this.leon.x, m.vz - this.leon.z); this.world.dieUnit(m.view, m.md.boss ? 1.5 : 0.7); this.world.placeUnit(m.view, m.vx, m.vz); m.view = null; }
+    for (let i = 0; i < (m.md.boss ? 24 : 7); i++) { const a = Math.random() * 6.28, sp = 2 + Math.random() * 3; this.world.spriteFx('spark', '#e8e0d0', m.vx, 0.8, m.vz, 0.45, 0.45, { vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, vy: 2 + Math.random() * 3 }); }
     for (const u of [this.leon, ...this.heroes]) if (u.holding === m.id) u.holding = null;
     this.gold += m.md.gold; this.addFloat(m.vx, 2.2, m.vz, `+${m.md.gold}G`, '#ffd34d'); sfx('coin', 0.4);
     if (this.selected && this.selected.ref === m) { this.selected = null; this.renderPanel(); }
@@ -735,7 +749,8 @@ export class Battle {
   updateMonsters(dt) {
     const L = this.leon;
     for (const m of this.monsters) {
-      if (!m.alive) { m.deadT -= dt; if (m.deadT <= 0 && m.view) { this.world.removeUnit(m.view); m.view = null; } continue; }
+      if (!m.alive) continue;
+      m.hitAnimT = (m.hitAnimT || 0) - dt;
       m.stun = Math.max(0, m.stun - dt); m.flash = Math.max(0, m.flash - dt); m.moveT += dt; m.lunge = Math.max(0, m.lunge - dt * 3);
       m.cd -= dt; if (m.cd > 0 || m.stun > 0) continue;
       // 공격 대상: 붙잡은 유닛 / 대기 중 공격 대상 / 원거리: 막혔을 때 사거리 안 가장 가까운 경로 위 유닛 (경로 밖은 절대 공격하지 않음)
@@ -746,44 +761,44 @@ export class Battle {
       }
       if (tgtId == null || tgtId === 'stun') continue;
       m.cd = 1 / m.as; m.lunge = 0.3;
-      if (tgtId === 'leon') { if (m.md.ranged) this.world.beam(m.vx, 1.2, m.vz, L.x, 1.2, L.z, '#9ff', 0.12, 0.04); this.damageLeon(m.atk, m); }
-      else { const h = this.heroes.find(hh => hh.uid === tgtId && hh.alive); if (!h) continue; if (m.md.ranged) this.world.beam(m.vx, 1.2, m.vz, h.x, 1.2, h.z, '#9ff', 0.12, 0.04);
-        const d = dmgAfterDef(m.atk, h.st.def); h.hp -= d; h.flash = 0.15; this.addFloat(h.x, 2.3, h.z, Math.ceil(d), '#ff8070');
+      { const tg = tgtId === 'leon' ? L : this.heroes.find(hh => hh.uid === tgtId); if (tg && m.view) { m.view.face(tg.x - m.vx, tg.z - m.vz); m.view.play('attack', { dur: Math.min(0.8, 0.9 / m.as) }); } }
+      if (tgtId === 'leon') { if (m.md.ranged) this.bolt(m, L); this.damageLeon(m.atk, m); }
+      else { const h = this.heroes.find(hh => hh.uid === tgtId && hh.alive); if (!h) continue; if (m.md.ranged) this.bolt(m, h);
+        const d = dmgAfterDef(m.atk, h.st.def); h.hp -= d; h.flash = 0.15; h.view.flash(0.15); if (!h.view.one) h.view.play('hit', { dur: 0.35 }); this.addFloat(h.x, 2.3, h.z, Math.ceil(d), '#ff8070');
         if (h.hp <= 0) { this.world.spriteFx('glow', '#ffffff', h.x, 1, h.z, 2.5, 0.4); this.removeHero(h, true); this.toastMsg(`${HEROES[h.hid].name} 쓰러짐 (웨이브 종료 후 카드로 복귀)`); } }
     }
   }
 
   // ───────────────────────── 화면 갱신
   updateViews(dt) {
-    const W = this.world, L = this.leon, now = performance.now() / 1000;
-    if (L.alive) {
-      const v = L.view; W.setFacing(v, L.dir.x >= 0 ? 1 : -1);
-      let sx = 1, sy = 1 + Math.sin(now * 2.2) * 0.012, rot = 0, y = L.y || 0;
-      if (L.walk) { y += Math.abs(Math.sin(L.walk)) * 0.12; rot = Math.sin(L.walk) * 0.04; }
-      if (L.act) { const k = L.act.t / L.act.dur; if (L.act.kind === 'combo') { rot = -Math.sign(L.dir.x || 1) * Math.sin(k * Math.PI) * 0.18; sx = 1 + Math.sin(k * Math.PI) * 0.06; } if (L.act.kind === 'whirl') { sx = Math.cos(L.act.t * 30); } if (L.act.kind === 'dodge') { rot = -Math.sign(L.act.vx || 1) * 0.3; sy = 0.92; } }
-      if (L.guard) { sy = 0.95; }
-      v.mat.rotation = rot; v.mat.color.setRGB(1, L.flash > 0 ? 0.55 : 1, L.flash > 0 ? 0.55 : 1); v.mat.opacity = L.invuln > 0 && !L.act ? 0.6 + Math.sin(now * 30) * 0.3 : 1;
-      W.placeUnit(v, L.x, L.z, y, Math.abs(sx) < 0.15 ? 0.15 : sx, sy);
+    const W = this.world, L = this.leon;
+    if (L.alive || L.view.dead) {
+      const v = L.view, moving = !L.act && L.walk > 0;
+      if (L.alive) {
+        if (L.act && L.act.kind === 'whirl') v.yaw += dt * 0; // 회전베기는 동작 자체가 돈다
+        else v.face(L.dir.x, L.dir.z);
+        v.setBase(L.guard ? 'guard' : moving ? (L.run ? 'run' : 'walk') : 'idle', moving ? (L.run ? 1.15 : 1.25) : 1);
+        v.setOpacity(L.invuln > 0 && !L.act ? 0.55 + Math.sin(performance.now() / 33) * 0.3 : 1);
+      }
+      W.placeUnit(v, L.x, L.z, L.y || 0);
     }
-    for (const h of this.heroes) {
-      const v = h.view, k = h.anim > 0 ? Math.sin((1 - h.anim / 0.25) * Math.PI) : 0;
-      v.mat.color.setRGB(1, h.flash > 0 ? 0.55 : 1, h.flash > 0 ? 0.55 : 1);
-      v.mat.rotation = -k * 0.12 * (v.flipped ? -1 : 1) * v.face;
-      W.placeUnit(v, h.x + k * 0.2 * (v.flipped ? -1 : 1) * v.face * -1, h.z, 0, 1 + k * 0.05, 1 + Math.sin(now * 2 + h.uid) * 0.012);
-    }
+    for (const h of this.heroes) W.placeUnit(h.view, h.x, h.z, 0);
     for (const m of this.monsters) {
       if (!m.view) continue;
       const a = toWorld(m.pc ?? m.c - 1, m.pr ?? m.r), b = toWorld(m.c, m.r), k = clamp(m.moveT / (this.tickDur * 0.85), 0, 1), e = k * k * (3 - 2 * k);
       m.knock.x *= Math.exp(-dt * 8); m.knock.z *= Math.exp(-dt * 8);
       m.vx = a.x + (b.x - a.x) * e + m.knock.x; m.vz = a.z + (b.z - a.z) * e + m.knock.z;
-      const v = m.view; const bob = k < 1 ? Math.abs(Math.sin(k * Math.PI)) * 0.15 : 0;
-      W.setFacing(v, 1);
-      if (!m.alive) { const t = 1 - m.deadT / 0.6; v.mat.opacity = 1 - t; v.mat.rotation = t * 0.6; W.placeUnit(v, m.vx, m.vz, -t * 0.4); continue; }
-      v.mat.color.setRGB(1, m.flash > 0 ? 0.5 : 1, m.flash > 0 ? 0.5 : (m.stun > 0 ? 0.6 : 1));
-      if (m.stun > 0) v.mat.color.setRGB(0.75, 0.75, 1);
-      v.mat.rotation = m.lunge > 0 ? -Math.sin(m.lunge / 0.3 * Math.PI) * 0.2 : (k < 1 ? Math.sin(k * Math.PI * 2) * 0.05 : 0);
-      W.placeUnit(v, m.vx + (m.lunge > 0 ? Math.sin(m.lunge / 0.3 * Math.PI) * 0.3 : 0), m.vz, bob, 1, 1);
+      const v = m.view;
+      if (k < 1 && m.stun <= 0) { v.face(b.x - a.x, b.z - a.z); v.setBase('walk', 1.6 / (this.tickDur / 0.8)); } else v.setBase('idle');
+      if (m.stun > 0) { v.flash(0.05, '#6f7cff'); if (Math.random() < dt * 6) W.spriteFx('spark', '#ffe680', m.vx + (Math.random() - .5) * .6, m.view.height + 0.2, m.vz, 0.35, 0.3, { vy: 0.5 }); }
+      W.placeUnit(v, m.vx, m.vz, 0);
     }
+  }
+  // 해골 석궁병 화살: 실제로 날아가는 화살 + 맞을 때 불꽃
+  bolt(m, tgt) {
+    const sx = m.vx, sz = m.vz, tx = tgt.x, tz = tgt.z; sfx('arrow', 0.4);
+    const f = this.world.beam(sx, 1.1, sz, sx + (tx - sx) * 0.15, 1.1, sz + (tz - sz) * 0.15, '#d8f0ff', 0.25, 0.035); let t = 0; const T = Math.max(0.12, Math.hypot(tx - sx, tz - sz) / 18);
+    f.fade = false; f.life = T; f.update = (ff, dt) => { t += dt; const k = Math.min(1, t / T); ff.obj.position.set(sx + (tx - sx) * k, 1.1 + Math.sin(k * Math.PI) * 0.4, sz + (tz - sz) * k); if (k >= 1) this.world.spriteFx('spark', '#bfe8ff', tx, 1.1, tz, 0.8, 0.15); };
   }
 
   addFloat(x, y, z, text, color) { this.floats.push({ wx: x, wy: y, wz: z, text: String(text), color, t: 0, life: 0.8, dx: (Math.random() - 0.5) * 20 }); if (this.floats.length > 60) this.floats.shift(); }
@@ -898,7 +913,7 @@ export class Battle {
   nextHint() {
     const steps = [
       { t: '왼쪽 아래 조이스틱으로 레온을 움직이세요 (PC: WASD)', b: '.joy', ev: 'move', need: 2.5 },
-      { t: '고블린에게 다가가 공격 버튼을 누르세요. 연타하면 연속기! (PC: J)', b: '[data-b="attack"]', ev: 'hit' },
+      { t: '해골에게 다가가 공격 버튼을 누르세요. 연타하면 연속기! (PC: J)', b: '[data-b="attack"]', ev: 'hit' },
       { t: '내려찍기 스킬로 주변 적을 한 번에! (PC: U)', b: '[data-b="slam"]', ev: 'slam' },
       { t: '길 위에 서 있으면 레온이 몬스터를 붙잡습니다. 놓친 몬스터는 성문으로 갑니다!', b: null, ev: 'timer', need: 6 },
     ];

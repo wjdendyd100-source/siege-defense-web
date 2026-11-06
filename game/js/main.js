@@ -1,10 +1,10 @@
 // 앱 셸: 화면 전환·저장·해상도. 타이틀 → 로비 → 스토리/스테이지/영웅/소환/편성
-import { loadAll, face, full } from './assets.js?v=20261106c';
-import { Battle, heroStats } from './battle.js?v=20261106c';
-import { HEROES, CLASSES, CLASS_ORDER, RANKS, RANK_COLOR, STORIES, STAGES, PROGRESSION, SPEAKERS, GACHA_RATE, GACHA_COST, PROTAGONIST } from './data.js?v=20261106c';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106c';
-import { scaleOf } from './layout.js?v=20261106c';
-import { sfx, setSfx } from './audio.js?v=20261106c';
+import { loadAll, face, full } from './assets.js?v=20261106d';
+import { Battle, heroStats } from './battle.js?v=20261106d';
+import { HEROES, CLASSES, CLASS_ORDER, RANKS, RANK_COLOR, STORIES, STAGES, PROGRESSION, SPEAKERS, GACHA_RATE, GACHA_COST, PROTAGONIST } from './data.js?v=20261106d';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106d';
+import { scaleOf } from './layout.js?v=20261106d';
+import { sfx, setSfx } from './audio.js?v=20261106d';
 
 const SAVE_KEY = 'edelwald_save_v1';
 const GAME_TITLE = '에델발트 연대기';
@@ -47,7 +47,7 @@ class App {
     this.screen.innerHTML = `<div class="bg" style="background-image:url(assets/bg_title.jpg)"></div><div class="shade"></div>
       <div class="logo"><div class="crest">${ICON.summon}</div><h1>${GAME_TITLE}</h1><div class="sub">${GAME_SUB}</div><div class="tag">영웅 수집형 육각 타워 디펜스 · 웹 프로토타입</div></div>
       <button class="btn gold big start">화면을 눌러 시작</button>
-      <div class="foot">모든 그림·효과음은 이 프로젝트용으로 새로 제작 · 글꼴 Noto Sans/Serif KR (SIL OFL) · three.js (MIT)</div>`;
+      <div class="foot">3D 캐릭터·애니메이션 KayKit by Kay Lousberg (CC0) · 일러스트·효과음은 이 프로젝트용 제작 · 글꼴 Noto Sans/Serif KR (SIL OFL) · three.js (MIT)</div>`;
     this.screen.querySelector('.start').addEventListener('click', () => { sfx('ui'); this.tryFullscreen(); this.show(this.lobby); });
   }
   tryFullscreen() { try { const d = document.documentElement; if (matchMedia('(pointer:coarse)').matches && d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen().then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { })).catch(() => { }); } catch { } }

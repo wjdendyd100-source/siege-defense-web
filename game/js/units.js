@@ -12,7 +12,7 @@ export async function loadModels(onProgress) {
   const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
   let done = 0;
   await Promise.all(MODEL_FILES.map(async n => {
-    const g = await loader.loadAsync(`assets/models/${n}.glb?v=20261106d`);
+    const g = await loader.loadAsync(`assets/models/${n}.gltf.json?v=20261106e`);
     const clips = {}; for (const c of g.animations) clips[c.name] = c;
     g.scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(g.scene);

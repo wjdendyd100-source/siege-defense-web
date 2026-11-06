@@ -13,7 +13,7 @@ const JOBS = [['sk_minion', 'mon_goblin_face'], ['sk_warrior', 'mon_orc_face'], 
     const dataUrl = await p.evaluate(async (model) => {
       const THREE = await import('three'); const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
       const { MeshoptDecoder } = await import('three/addons/libs/meshopt_decoder.module.js');
-      const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder); const g = await l.loadAsync(`assets/models/${model}.glb`);
+      const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder); const g = await l.loadAsync(`assets/models/${model}.gltf.json`);
       const scene = new THREE.Scene(); scene.add(g.scene);
       scene.add(new THREE.HemisphereLight('#fff6e0', '#3a4a30', 1.4)); const d = new THREE.DirectionalLight('#ffffff', 2); d.position.set(1, 2, 3); scene.add(d);
       const mixer = new THREE.AnimationMixer(g.scene); const clip = g.animations.find(a => a.name === 'Taunt') || g.animations[0]; mixer.clipAction(clip).play(); mixer.update(clip.duration * 0.35);

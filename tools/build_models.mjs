@@ -68,7 +68,12 @@ for (const [name, m] of Object.entries(MODELS)) {
   for (const a of root.listAnimations()) { const used = new Set(a.listChannels().map(c => c.getSampler())); for (const sm of a.listSamplers()) if (!used.has(sm)) sm.dispose(); }
   await doc.transform(unpartition(), resample({ tolerance: 5e-4 }), prune(), dedup(), quantize({ quantizeNormal: 8, quantizeTexcoord: 12 }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   for (const acc of root.listAccessors()) if (!acc.listParents().some(p => p.propertyType !== 'Root')) acc.dispose(); // 남은 고아 accessor 정리
-  const file = path.join(OUT, `${name}.glb`);
-  await io.write(file, doc);
+  // 배포처(아티팩트)가 .glb를 서비스하지 않아, 바이너리를 넣은 glTF JSON(.gltf.json)으로 저장한다 (형식은 표준 glTF 2.0)
+  const glb = Buffer.from(await io.writeBinary(doc));
+  const jl = glb.readUInt32LE(12), json = JSON.parse(glb.subarray(20, 20 + jl).toString('utf8'));
+  const bl = glb.readUInt32LE(20 + jl), bin = glb.subarray(28 + jl, 28 + jl + bl);
+  json.buffers[0].uri = 'data:application/octet-stream;base64,' + bin.toString('base64');
+  const file = path.join(OUT, `${name}.gltf.json`);
+  fs.writeFileSync(file, JSON.stringify(json));
   console.log(name, Math.round(fs.statSync(file).size / 1024) + 'KB', root.listAnimations().length + ' anims');
 }

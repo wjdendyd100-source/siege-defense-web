@@ -1,13 +1,13 @@
 // 전투: 주인공 직접 조작(조작 모드) ↔ 영웅 배치·소환·합성(지휘 모드), 육각 격자 몬스터 판정, HUD
-import { World } from './scene3d.js?v=20261106d';
-import { RIGS } from './units.js?v=20261106d';
-import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106d';
-import { monsterTick, previewPaths } from './rules.js?v=20261106d';
-import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106d';
-import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106d';
-import { ICON, classIcon, starsHtml } from './icons.js?v=20261106d';
-import { face } from './assets.js?v=20261106d';
-import { sfx } from './audio.js?v=20261106d';
+import { World } from './scene3d.js?v=20261106f';
+import { RIGS } from './units.js?v=20261106f';
+import { HexMap, toWorld, fromWorld, key, dist as hexDist, placementCheck, lineCells, progressX } from './hex.js?v=20261106f';
+import { monsterTick, previewPaths } from './rules.js?v=20261106f';
+import { CLASSES, HEROES, MONSTERS, MAPS, PROTAGONIST as P, RANK_MULT, RANKS, STAR, SUMMON_STAR_RATE, SUMMON_COST, HAND_MAX, DEF_K, RANK_COLOR } from './data.js?v=20261106f';
+import { slotCounts, place, CTRL, CMD, TOP, CARD_W, CARD_H } from './layout.js?v=20261106f';
+import { ICON, classIcon, starsHtml } from './icons.js?v=20261106f';
+import { face } from './assets.js?v=20261106f';
+import { sfx } from './audio.js?v=20261106f';
 
 const PREP_DEFAULT = 60, REST = 20;
 // 3D 모델 배정: 몬스터 → 해골 군단, 영웅 → 병과별 모델 + 영웅마다 색 (같은 모델을 구분)
@@ -122,7 +122,7 @@ export class Battle {
     this.world.resize(W, H); this.ov.width = W * dpr; this.ov.height = H * dpr; this.ov.style.width = W + 'px'; this.ov.style.height = H + 'px';
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const env = this.env = this.layoutEnv(); const S = env.S;
-    this.hud.style.setProperty('--s', S);
+    this.hud.style.setProperty('--s', S); this.hud.style.setProperty('--inl', env.inL + 'px');
     const setR = (el, r) => { el.style.left = r.x + 'px'; el.style.top = r.y + 'px'; el.style.width = r.w + 'px'; el.style.height = r.h + 'px'; };
     const pl = (name, def) => place(def, def.a, def.v, env);
     for (const [k, d] of Object.entries(TOP)) { const el = this.q(`[data-l="${k}"]`); if (el) setR(el, pl(k, d)); }
@@ -435,7 +435,7 @@ export class Battle {
   }
   waveCleared() {
     const bonus = 30 + 10 * this.waveIdx; this.gold += bonus; sfx('coin');
-    this.floats.push({ text: `웨이브 클리어 +${bonus}G`, x: this.app.W / 2, y: this.app.H * 0.3, t: 0, life: 1.6, screen: true, color: '#ffd34d', size: 1.4 });
+    this.bannerT = performance.now() + 1600; this.floats.push({ text: `웨이브 클리어 +${bonus}G`, x: this.app.W / 2, y: this.app.H * 0.3, t: 0, life: 1.6, screen: true, color: '#ffd34d', size: 1.4 });
     // 라운드 종료: 이번 웨이브에 쓰러진 영웅을 대기 카드로 복귀 (넘치면 넘침 표시)
     for (const d of this.deadThisWave) { const over = this.hand.filter(c => !c.over).length >= HAND_MAX; this.hand.push({ ...d, over }); }
     this.deadThisWave = []; this.renderCards();
@@ -554,7 +554,7 @@ export class Battle {
   startCombo() {
     const L = this.leon; const step = P.combo[L.comboIdx];
     const tgt = this.nearestMonster(L.x, L.z, step.reach + 1.2); if (tgt) this.faceTo(L, tgt.vx, tgt.vz);
-    L.act = { kind: 'combo', t: 0, dur: step.dur, step, hit: false }; L.queued = false; sfx('swing', 0.8);
+    L.act = { kind: 'combo', t: 0, dur: step.dur, step, hit: false, lunge: tgt ? step.lunge : step.lunge * 0.15 }; L.queued = false; sfx('swing', 0.8); // 적이 없으면 거의 전진하지 않음
     L.view.play('combo', { name: P_ANIM.combo[L.comboIdx], dur: step.dur * 1.35 });
     this.hintEvent('attack');
   }
@@ -606,7 +606,7 @@ export class Battle {
     if (act) {
       act.t += dt; const k = act.t / act.dur;
       if (act.kind === 'combo') {
-        const s = act.step; if (k < 0.45) { L.x += L.dir.x * s.lunge / (act.dur * 0.45) * dt; L.z += L.dir.z * s.lunge / (act.dur * 0.45) * dt; }
+        const s = act.step; if (k < 0.45) { L.x += L.dir.x * act.lunge / (act.dur * 0.45) * dt; L.z += L.dir.z * act.lunge / (act.dur * 0.45) * dt; }
         if (!act.hit && act.t >= s.hitAt) {
           act.hit = true; const ca = Math.cos(s.arc / 2 * Math.PI / 180);
           this.world.slash(L.x + L.dir.x * 0.9, L.z + L.dir.z * 0.9, L.dir, s.reach * 0.95, L.comboIdx === 2 ? '#ffd27a' : '#fff6d8', L.comboIdx === 1 ? 0.5 : 0);
@@ -777,7 +777,7 @@ export class Battle {
       if (L.alive) {
         if (L.act && L.act.kind === 'whirl') v.yaw += dt * 0; // 회전베기는 동작 자체가 돈다
         else v.face(L.dir.x, L.dir.z);
-        v.setBase(L.guard ? 'guard' : moving ? (L.run ? 'run' : 'walk') : 'idle', moving ? (L.run ? 1.15 : 1.25) : 1);
+        if (!L.act) v.setBase(L.guard ? 'guard' : moving ? (L.run ? 'run' : 'walk') : 'idle', moving ? (L.run ? 1.15 : 1.25) : 1);
         v.setOpacity(L.invuln > 0 && !L.act ? 0.55 + Math.sin(performance.now() / 33) * 0.3 : 1);
       }
       W.placeUnit(v, L.x, L.z, L.y || 0);
@@ -872,7 +872,7 @@ export class Battle {
     const pt = Math.floor(this.playTime); q('.top-info .clock').textContent = `${String(Math.floor(pt / 60)).padStart(2, '0')}:${String(pt % 60).padStart(2, '0')}`;
     q('.gold-chip b').textContent = this.gold.toLocaleString('ko-KR');
     q('.speed .lb2').textContent = this.speed + 'x'; q('.speed').classList.toggle('on', this.speed > 1);
-    const prep = q('.prep'); const showPrep = this.phase === 'prep' || this.phase === 'rest';
+    const prep = q('.prep'); const showPrep = (this.phase === 'prep' || this.phase === 'rest') && !this.floats.some(f => f.screen); // 큰 안내 글자가 사라진 뒤에 표시 (겹침 방지)
     prep.style.display = showPrep ? '' : 'none';
     if (showPrep) { q('.prep-t').textContent = (this.phase === 'prep' ? '전투 준비' : '다음 웨이브까지') + ` ${Math.ceil(this.phaseT)}초`; q('[data-b="go"] span').textContent = this.phase === 'prep' ? '전투 시작' : '바로 시작'; }
     for (const id of ['slam', 'thrust', 'whirl', 'dodge']) { const b = q(`[data-b="${id}"]`); const cd = L.cd[id], max = id === 'dodge' ? P.dodge.cd : P.skills[id].cd; b.style.setProperty('--cd', cd > 0 ? cd / max : 0); b.querySelector('.cdv').textContent = cd > 0 ? cd.toFixed(cd < 1 ? 1 : 0) : ''; b.classList.toggle('cooling', cd > 0); }
@@ -906,7 +906,7 @@ export class Battle {
     this.preview = { t: 0, paths: previewPaths(this.map, cells) };
   }
   toastMsg(t, ms = 1400) { const el = this.q('.toast'); el.textContent = t; el.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('show'), ms); }
-  bannerMsg(t) { this.floats.push({ text: t, x: this.app.W / 2, y: this.app.H * 0.36, t: 0, life: 1.6, screen: true, color: '#ffe9a8', size: 1.8 }); }
+  bannerMsg(t) { this.bannerT = performance.now() + 1600; this.floats.push({ text: t, x: this.app.W / 2, y: this.app.H * 0.36, t: 0, life: 1.6, screen: true, color: '#ffe9a8', size: 1.8 }); }
   shout(t) { const el = this.q('.shout'); el.innerHTML = `<div class="sf" style="background-image:url(${face(P.art)})"></div><span>${t}</span>`; el.classList.add('show'); clearTimeout(this._st); this._st = setTimeout(() => el.classList.remove('show'), 2500); }
 
   // 튜토리얼 안내 (스토리 1)

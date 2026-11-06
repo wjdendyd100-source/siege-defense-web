@@ -12,13 +12,27 @@ export async function loadModels(onProgress) {
   const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
   let done = 0;
   await Promise.all(MODEL_FILES.map(async n => {
-    const g = await loader.loadAsync(`assets/models/${n}.gltf.json?v=20261106e`);
+    // 파일 안의 data: 주소를 네트워크로 다시 읽지 않도록(일부 환경의 보안 정책이 막음) 직접 풀어서 GLB로 만들어 넘긴다
+    const res = await fetch(`assets/models/${n}.gltf.json?v=20261106f`);
+    if (!res.ok) throw new Error(`모델 ${n} (${res.status})`);
+    const g = await loader.parseAsync(toGlb(await res.json()), '');
     const clips = {}; for (const c of g.animations) clips[c.name] = c;
     g.scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(g.scene);
     LIB[n] = { scene: g.scene, clips, height: box.max.y - box.min.y };
     done++; onProgress && onProgress(done / MODEL_FILES.length);
   }));
+}
+
+function toGlb(json) {
+  const b64 = json.buffers[0].uri.slice(json.buffers[0].uri.indexOf(',') + 1); delete json.buffers[0].uri;
+  const raw = atob(b64), bin = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+  let js = new TextEncoder().encode(JSON.stringify(json)); const jl = (js.length + 3) & ~3, bl = (bin.length + 3) & ~3;
+  const out = new Uint8Array(12 + 8 + jl + 8 + bl), dv = new DataView(out.buffer);
+  dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+  dv.setUint32(12, jl, true); dv.setUint32(16, 0x4E4F534A, true); out.fill(0x20, 20, 20 + jl); out.set(js, 20);
+  dv.setUint32(20 + jl, bl, true); dv.setUint32(24 + jl, 0x004E4942, true); out.set(bin, 28 + jl);
+  return out.buffer;
 }
 
 // 역할별 설정: 모델·키·보이는 무기·색·동작 이름
@@ -82,7 +96,7 @@ export class Unit3D {
     const clip = name || this.clipName(key); const a = this.actions[clip]; if (!a) { done && done(); return 0; }
     a.setLoop(hold ? THREE.LoopRepeat : THREE.LoopOnce, hold ? Infinity : 1); a.clampWhenFinished = true;
     a.timeScale = dur ? a.getClip().duration / dur : speed;
-    this.one = hold ? null : { action: a, done }; this._fadeTo(a, fade);
+    this.one = { action: a, done, hold }; this._fadeTo(a, fade); // 반복(hold) 동작도 stopOne 전까지 기본 동작이 덮어쓰지 못하게
     return a.getClip().duration / a.timeScale;
   }
   stopOne() { if (this.one) { this.one = null; this._fadeTo(this.actions[this.baseName], 0.1); } }

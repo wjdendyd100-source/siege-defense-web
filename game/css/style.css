@@ -276,7 +276,7 @@ body.portrait #rotate { display: flex; }
 .cmd-cards { padding-bottom: calc(var(--u)*10); } .cmd-cards .scrollbar { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--u)*5); background: rgba(255,255,255,.12); border-radius: 99px; } .cmd-cards .scrollbar i { position: absolute; top: 0; bottom: 0; background: var(--gold); border-radius: 99px; }
 .hud[data-mode="control"] .cmd, .hud[data-mode="command"] .ctrl, .hud[data-mode="command"] .joy, .hud[data-mode="command"] .ctrl-cards { display: none !important; }
 .hud.no-summon .ctrl-cards, .hud.no-summon .mini-summon, .hud.no-summon .cmd, .hud.no-summon .modeb, .hud.no-summon .gold-chip { display: none !important; }
-.tip { left: 50%; top: calc(var(--u)*92); transform: translateX(-50%); background: rgba(5,8,15,.9); border: calc(var(--u)*2) solid var(--gold); color: #fff1b0; padding: calc(var(--u)*12) calc(var(--u)*24); border-radius: calc(var(--u)*12); font-size: calc(var(--u)*26); font-weight: 700; display: none; max-width: 80%; width: max-content; text-align: center; }
+.tip { left: calc(var(--u)*16 + var(--inl, 0px)); top: calc(var(--u)*112); transform: none; text-align: left !important; max-width: calc(var(--u)*420) !important; background: rgba(5,8,15,.9); border: calc(var(--u)*2) solid var(--gold); color: #fff1b0; padding: calc(var(--u)*12) calc(var(--u)*24); border-radius: calc(var(--u)*12); font-size: calc(var(--u)*26); font-weight: 700; display: none; max-width: 80%; width: max-content; text-align: center; }
 .tip.show { display: block; }
 .toast { left: 50%; top: 44%; transform: translateX(-50%); background: rgba(5,8,15,.85); padding: calc(var(--u)*10) calc(var(--u)*24); border-radius: 99px; font-size: calc(var(--u)*24); border: 1px solid var(--gold3); opacity: 0; transition: opacity .2s; white-space: nowrap; }
 .toast.show { opacity: 1; }
@@ -294,3 +294,9 @@ body.portrait #rotate { display: flex; }
 .vn-text { font-size: max(14px, calc(var(--u)*30)); } .mbtn small, .node .no, .hintline, .desc, .htile .nm small { font-size: max(11px, calc(var(--u)*21)); }
 .party .grid { top: calc(var(--u)*360); } .party .desc { top: calc(var(--u)*270); line-height: 1.35; }
 .party .desc, .hintline { text-shadow: 0 1px 3px #000, 0 0 8px #000; color: var(--ink); }
+
+.title .ver { position: absolute; right: 12px; top: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,.55); color: #ffe29a; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+
+/* 안내 문구: 체력 패널 아래 왼쪽 고정. 선택 정보창이 열리면 겹치지 않게 숨김 */
+.hud:has(.info-panel.show) .tip { opacity: 0; }
+.tip { font-size: max(12px, calc(var(--u)*21)) !important; padding: calc(var(--u)*10) calc(var(--u)*16) !important; transition: opacity .2s; }

@@ -1,7 +1,7 @@
 // 에셋 로딩: 전부 이 프로젝트에서 새로 생성한 이미지(game/assets). 교체 시 파일만 바꾸면 된다.
 // 레온 그림은 사용자 제공 시안(art_src/leon_concept_sheet.png)에서 tools/cut_leon.py로 잘라 만든다.
 import * as THREE from 'three';
-import { loadModels } from './units.js?v=20261106d';
+import { loadModels } from './units.js?v=20261106f';
 
 export const ART = [
   'hero_protagonist', 'hero_sera', 'hero_bran', 'hero_elise', 'hero_marco', 'hero_roderick', 'hero_amelia',

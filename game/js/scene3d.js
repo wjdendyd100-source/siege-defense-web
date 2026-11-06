@@ -1,8 +1,8 @@
 // 3D 전장: 원근 카메라(전략 게임식 내려다보는 각도), 지면, 성문 소품, 스프라이트 유닛, 효과.
 import * as THREE from 'three';
-import { A, fxTex } from './assets.js?v=20261106d';
-import { Unit3D } from './units.js?v=20261106d';
-import { toWorld, SQ3, key } from './hex.js?v=20261106d';
+import { A, fxTex } from './assets.js?v=20261106f';
+import { Unit3D } from './units.js?v=20261106f';
+import { toWorld, SQ3, key } from './hex.js?v=20261106f';
 
 export class World {
   constructor(canvas) {
